@@ -88,11 +88,14 @@ pub fn model_to_xml(
     xml.push_str("    <diagrams>\n");
     xml.push_str("      <view identifier=\"view-001\" xsi:type=\"Diagram\">\n");
     xml.push_str("        <name>Default View</name>\n");
-    xml.push_str("        <node identifier=\"node-001\" x=\"0\" y=\"0\" width=\"120\" height=\"55\" xsi:type=\"Label\">\n");
-    xml.push_str("          <label ref=\"");
-        xml.push_str(&element_uuids[&elements[0].0].to_string());
+
+    if let Some((first_id, _, _)) = elements.first() {
+        xml.push_str("        <node identifier=\"node-001\" x=\"0\" y=\"0\" width=\"120\" height=\"55\" xsi:type=\"Label\">\n");
+        xml.push_str("          <label ref=\"");
+        xml.push_str(&element_uuids[first_id].to_string());
         xml.push_str("\"/>\n");
         xml.push_str("        </node>\n");
+    }
 
     for (id, _) in &relations {
         let src_uuid = element_uuids[&model.relation(*id).source];
@@ -363,6 +366,23 @@ mod tests {
         assert!(xml.contains("xsi:type=\"Serving\""));
         assert!(xml.contains(&model.element(actor_id).name));
         assert!(xml.contains(&model.element(role_id).name));
+    }
+
+    #[test]
+    fn test_model_to_xml_empty_model_no_panic() {
+        // Regression: empty model (zero elements) must not panic on views emission.
+        let model = Model::new("empty");
+        let positions: HashMap<ElementId, (f64, f64, f64, f64)> = HashMap::new();
+
+        let xml = model_to_xml(&model, &positions).expect("empty model should serialize");
+
+        // Valid structure: empty <elements>/<relationships>, a <views> block, well-closed root.
+        assert!(xml.contains("xmlns=\"http://www.opengroup.org/xsd/archimate/3.0/\""));
+        assert!(xml.contains("<name>empty</name>"));
+        assert!(xml.contains("<elements>\n  </elements>"));
+        assert!(xml.contains("<relationships>\n  </relationships>"));
+        assert!(xml.ends_with("</model>"));
+        assert!(!xml.contains("node-001"), "no node should be emitted when there are no elements");
     }
 
     #[test]
