@@ -31,7 +31,7 @@ pub enum LayoutError {
 /// Computes (x, y) positions for all elements in a model.
 #[derive(Debug, Default)]
 pub struct LayoutResolver {
-    positions: HashMap<ElementId, (f64, f64)>,
+    positions: HashMap<ElementId, (f64, f64, f64, f64)>,
 }
 
 impl LayoutResolver {
@@ -206,7 +206,7 @@ impl LayoutResolver {
                 let x = col as f64 * COL_WIDTH + component_index as f64 * COMPONENT_OFFSET;
                 let y = depth as f64 * ROW_HEIGHT;
 
-                self.positions.insert(elem_id, (x, y));
+                self.positions.insert(elem_id, (x, y, 120.0, 55.0));
             }
 
             component_index += 1;
@@ -216,7 +216,7 @@ impl LayoutResolver {
     }
 
     /// Access the computed positions.
-    pub fn positions(&self) -> &HashMap<ElementId, (f64, f64)> {
+    pub fn positions(&self) -> &HashMap<ElementId, (f64, f64, f64, f64)> {
         &self.positions
     }
 }
@@ -280,7 +280,7 @@ mod tests {
         let positions = resolver.positions();
         assert_eq!(positions.len(), 3);
 
-        let mut y_positions: Vec<f64> = positions.values().map(|(_, y)| *y).collect();
+        let mut y_positions: Vec<f64> = positions.values().map(|(_, y, _, _)| *y).collect();
         y_positions.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
         // Y positions should be strictly increasing (A.y < B.y < C.y)
@@ -303,6 +303,8 @@ mod tests {
         for pos in positions.values() {
             assert!(pos.0 >= 0.0);
             assert!(pos.1 >= 0.0);
+            assert!(pos.2 >= 0.0);
+            assert!(pos.3 >= 0.0);
         }
     }
 
@@ -319,14 +321,14 @@ mod tests {
         // Component C-D should be at higher X offset
         let min_x_comp1 = positions
             .values()
-            .filter(|(_, x)| *x < COMPONENT_OFFSET / 2.0)
-            .map(|(x, _)| *x)
+            .filter(|(_, x, _, _)| *x < COMPONENT_OFFSET / 2.0)
+            .map(|(x, _, _, _)| *x)
             .fold(f64::INFINITY, f64::min);
             
         let min_x_comp2 = positions
             .values()
-            .filter(|(_, x)| *x >= COMPONENT_OFFSET / 2.0)
-            .map(|(x, _)| *x)
+            .filter(|(_, x, _, _)| *x >= COMPONENT_OFFSET / 2.0)
+            .map(|(x, _, _, _)| *x)
             .fold(f64::INFINITY, f64::min);
             
 
