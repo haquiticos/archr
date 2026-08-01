@@ -145,11 +145,11 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
     }
 
     // Convert (x, y) to (x, y, width, height) with default dimensions.
-    let positions: HashMap<_, _> = resolver
+    let positions = resolver
         .positions()
         .iter()
-        .map(|(&id, &(x, y))| (id, (x, y, 120.0, 55.0)))
-        .collect();
+        .map(|(&id, pos)| (id, (pos.0, pos.1, 120.0, 55.0)))
+        .collect::<HashMap<_, _>>();
 
     let xml = match xml::model_to_xml(&model, &positions) {
         Ok(x) => x,

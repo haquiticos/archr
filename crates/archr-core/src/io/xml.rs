@@ -88,29 +88,51 @@ pub fn model_to_xml(
     xml.push_str("    <diagrams>\n");
     xml.push_str("      <view identifier=\"view-001\" xsi:type=\"Diagram\">\n");
     xml.push_str("        <name>Default View</name>\n");
+            // Sort elements by Y position (top to bottom) for proper layer ordering visualization
+            // Sort by Y position first, then by X position
+            // Build indexed elements from the elements Vec (which has (id, name, kind))
+            let mut indexed_elements: Vec<(&ElementId, &Element)> = Vec::new();
+            for (id, _, _) in &elements {
+                indexed_elements.push((id, model.element(*id)));
+            }
 
-    for (idx, (id, _, _)) in elements.iter().enumerate() {
-        let (x, y, w, h) = positions
-            .get(id)
-            .copied()
-            .unwrap_or((0.0, 0.0, 120.0, 55.0));
-        let node_id = format!("node-{:03}", idx + 1);
-        xml.push_str("        <node identifier=\"");
-        xml.push_str(&node_id);
-        xml.push_str("\" x=\"");
-        xml.push_str(&x.to_string());
-        xml.push_str("\" y=\"");
-        xml.push_str(&y.to_string());
-        xml.push_str("\" width=\"");
-        xml.push_str(&w.to_string());
-        xml.push_str("\" height=\"");
-        xml.push_str(&h.to_string());
-        xml.push_str("\" xsi:type=\"Label\">\n");
-        xml.push_str("          <label ref=\"");
-        xml.push_str(&element_uuids[id].to_string());
-        xml.push_str("\"/>\n");
-        xml.push_str("        </node>\n");
-    }
+            indexed_elements.sort_by(|a, b| {
+                let (y_a, _, _, _) = positions.get(a.0).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+                let (y_b, _, _, _) = positions.get(b.0).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+                
+                match y_a.partial_cmp(&y_b) {
+                    Some(std::cmp::Ordering::Equal) => {
+                        // Same Y, sort by X position
+                        let (x_a, _, _, _) = positions.get(a.0).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+                        let (x_b, _, _, _) = positions.get(b.0).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+                        x_a.partial_cmp(&x_b).unwrap_or(std::cmp::Ordering::Equal)
+                    }
+                    other => other.unwrap_or(std::cmp::Ordering::Equal),
+                }
+            });
+            // Generate nodes in sorted order
+            for (idx, (id, elem)) in indexed_elements.iter().enumerate() {
+                let (x, y, w, h) = positions
+                    .get(id)
+                    .copied()
+                    .unwrap_or((0.0, 0.0, 120.0, 55.0));
+                let node_id = format!("node-{:03}", idx + 1);
+                xml.push_str("        <node identifier=\"");
+                xml.push_str(&node_id);
+                xml.push_str("\" x=\"");
+                xml.push_str(&x.to_string());
+                xml.push_str("\" y=\"");
+                xml.push_str(&y.to_string());
+                xml.push_str("\" width=\"");
+                xml.push_str(&w.to_string());
+                xml.push_str("\" height=\"");
+                xml.push_str(&h.to_string());
+                xml.push_str("\" xsi:type=\"Label\">\n");
+                xml.push_str("          <label ref=\"");
+                xml.push_str(&element_uuids[id].to_string());
+                xml.push_str("\"/>\n");
+                xml.push_str("        </node>\n");
+            }
 
     for (id, _) in &relations {
         let src_uuid = element_uuids[&model.relation(*id).source];
