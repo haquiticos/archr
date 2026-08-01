@@ -89,10 +89,25 @@ pub fn model_to_xml(
     xml.push_str("      <view identifier=\"view-001\" xsi:type=\"Diagram\">\n");
     xml.push_str("        <name>Default View</name>\n");
 
-    if let Some((first_id, _, _)) = elements.first() {
-        xml.push_str("        <node identifier=\"node-001\" x=\"0\" y=\"0\" width=\"120\" height=\"55\" xsi:type=\"Label\">\n");
+    for (idx, (id, _, _)) in elements.iter().enumerate() {
+        let (x, y, w, h) = positions
+            .get(id)
+            .copied()
+            .unwrap_or((0.0, 0.0, 120.0, 55.0));
+        let node_id = format!("node-{:03}", idx + 1);
+        xml.push_str("        <node identifier=\"");
+        xml.push_str(&node_id);
+        xml.push_str("\" x=\"");
+        xml.push_str(&x.to_string());
+        xml.push_str("\" y=\"");
+        xml.push_str(&y.to_string());
+        xml.push_str("\" width=\"");
+        xml.push_str(&w.to_string());
+        xml.push_str("\" height=\"");
+        xml.push_str(&h.to_string());
+        xml.push_str("\" xsi:type=\"Label\">\n");
         xml.push_str("          <label ref=\"");
-        xml.push_str(&element_uuids[first_id].to_string());
+        xml.push_str(&element_uuids[id].to_string());
         xml.push_str("\"/>\n");
         xml.push_str("        </node>\n");
     }
@@ -423,5 +438,43 @@ mod tests {
 
         let unique_uuids: HashSet<&str> = identifiers.iter().cloned().collect();
         assert_eq!(identifiers.len(), unique_uuids.len(), "UUIDs should be unique");
+    }
+
+    #[test]
+    fn test_model_to_xml_emits_node_per_element() {
+        // Regression for issue #3: generated diagram view must emit one <node>
+        // per element using the provided layout positions, not a single node
+        // referencing only elements[0].
+        let mut model = Model::new("Multi Element");
+        let a = model.add_element("Customer", ElementKind::BusinessActor);
+        let b = model.add_element("CRM", ElementKind::ApplicationComponent);
+        let c = model.add_element("DB", ElementKind::Artifact);
+        model.link(a, b, RelationKind::Serving);
+        model.link(b, c, RelationKind::Serving);
+
+        let positions: HashMap<_, _> = vec![
+            (a, (0.0, 0.0, 120.0, 55.0)),
+            (b, (0.0, 120.0, 120.0, 55.0)),
+            (c, (0.0, 240.0, 120.0, 55.0)),
+        ]
+        .into_iter()
+        .collect();
+
+        let xml = model_to_xml(&model, &positions).unwrap();
+
+        // Exactly three view nodes, with stable identifiers node-001..node-003.
+        let node_count = xml.matches("<node identifier=\"node-").count();
+        assert_eq!(node_count, 3, "should emit one node per element, got {node_count}");
+        assert!(xml.contains("node-001"));
+        assert!(xml.contains("node-002"));
+        assert!(xml.contains("node-003"));
+
+        // Each node carries its element's layout coordinates, not (0,0) for all.
+        assert!(xml.contains("x=\"0\" y=\"120\""));
+        assert!(xml.contains("x=\"0\" y=\"240\""));
+
+        // Connections remain anchored to element UUIDs regardless of node order.
+        let conn_count = xml.matches("<connection identifier=\"conn-").count();
+        assert_eq!(conn_count, 2, "should still emit both connections");
     }
 }
