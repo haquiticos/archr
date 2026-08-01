@@ -1,0 +1,11 @@
+model:
+  name: Orphan ID Model
+  elements:
+    - id: actor_001
+      name: Customer
+      kind: BusinessActor
+  relationships:
+    - id: rel_001
+      source: actor_001
+      target: db_001
+      kind: Serving

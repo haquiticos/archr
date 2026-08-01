@@ -1,0 +1,14 @@
+model:
+  name: Invalid Relationship Model
+  elements:
+    - id: actor_001
+      name: Customer
+      kind: BusinessActor
+    - id: node_001
+      name: Server
+      kind: Node
+  relationships:
+    - id: rel_001
+      source: actor_001
+      target: node_001
+      kind: Realization

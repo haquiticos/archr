@@ -1,0 +1,43 @@
+name: Test Skill (Python)
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-skill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Verify Python syntax
+        run: python3 -m py_compile skill/scripts/archr.py
+
+      - name: Test --help
+        run: |
+          python3 skill/scripts/archr.py --help
+
+      - name: Verify SKILL.md frontmatter
+        run: |
+          python3 -c "
+          import re
+          with open('skill/SKILL.md') as f:
+              content = f.read()
+          m = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+          assert m, 'No frontmatter found'
+          fm = m.group(1)
+          assert 'name: archr-skill' in fm, 'name must be archr-skill'
+          print('SKILL.md frontmatter OK')
+          "
+
+      - name: Verify PEP 723 block
+        run: |
+          grep -q '# /// script' skill/scripts/archr.py
+          echo "PEP 723 block present"

@@ -1,0 +1,9 @@
+model:
+  name: Duplicate ID Model
+  elements:
+    - id: x1
+      name: First
+      kind: BusinessActor
+    - id: x1
+      name: Second
+      kind: BusinessRole

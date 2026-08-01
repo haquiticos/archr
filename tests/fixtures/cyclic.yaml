@@ -1,0 +1,18 @@
+model:
+  name: Cyclic Model
+  elements:
+    - id: elem_a
+      name: Alpha
+      kind: BusinessProcess
+    - id: elem_b
+      name: Beta
+      kind: BusinessProcess
+  relationships:
+    - id: rel_001
+      source: elem_a
+      target: elem_b
+      kind: Triggering
+    - id: rel_002
+      source: elem_b
+      target: elem_a
+      kind: Triggering

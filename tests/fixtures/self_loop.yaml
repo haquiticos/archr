@@ -1,0 +1,11 @@
+model:
+  name: Self Loop Model
+  elements:
+    - id: elem_001
+      name: Self
+      kind: BusinessActor
+  relationships:
+    - id: rel_001
+      source: elem_001
+      target: elem_001
+      kind: Association

@@ -1,0 +1,19 @@
+[package]
+name = "archr-core"
+version = "1.0.0"
+edition = "2021"
+description = "Headless ArchiMate 3.2 engine — validate, manipulate, and export models via CLI"
+
+
+[[bin]]
+name = "archr"
+path = "src/main.rs"
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1.0"
+quick-xml = { version = "0.31", features = ["serialize"] }
+clap = { version = "=4.5.11", features = ["derive"] }
+petgraph = "0.6"
+uuid = { version = "1.6", features = ["v4", "serde"] }
+thiserror = "1.0"
