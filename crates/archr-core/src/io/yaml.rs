@@ -1,6 +1,7 @@
 //! YAML I/O for ArchiMate models.
 //!
 //! Handles (de)serialization to/from YAML, with schema-level validation.
+use std::collections::HashMap;
 
 use crate::model::{ElementId, ElementKind, Model, RelationKind};
 use serde::{Deserialize, Serialize};
@@ -153,6 +154,53 @@ pub fn model_to_yaml(model: &Model) -> String {
                 source: format!("e_{}", rel.source.0),
                 target: format!("e_{}", rel.target.0),
                 kind: rel.kind.to_string(),
+            })
+            .collect(),
+    };
+
+    let yaml_model = YamlModel { model: inner };
+    serde_yaml::to_string(&yaml_model).unwrap_or_else(|_| "Error".to_string())
+}
+
+/// Serialize an ArchiMate Model to YAML, optionally preserving original XML IDs.
+pub fn model_to_yaml_with_ids(model: &Model, original_ids: Option<&HashMap<String, ElementId>>) -> String {
+    let id_map: HashMap<ElementId, String> = original_ids
+        .map(|map| map.iter().map(|(k, v)| (v.clone(), k.clone())).collect())
+        .unwrap_or_else(|| HashMap::new());
+
+    let inner = YamlModelInner {
+        name: model.name.clone(),
+        elements: model
+            .iter_elements()
+            .map(|elem| {
+                let id = id_map
+                    .get(&elem.id)
+                    .cloned()
+                    .unwrap_or_else(|| format!("e_{}", elem.id.0));
+                YamlElement {
+                    id,
+                    name: elem.name.clone(),
+                    kind: elem.kind.to_string(),
+                }
+            })
+            .collect(),
+        relationships: model
+            .iter_relations()
+            .map(|rel| {
+                let source = id_map
+                    .get(&rel.source)
+                    .cloned()
+                    .unwrap_or_else(|| format!("e_{}", rel.source.0));
+                let target = id_map
+                    .get(&rel.target)
+                    .cloned()
+                    .unwrap_or_else(|| format!("e_{}", rel.target.0));
+                YamlRelationship {
+                    id: format!("r_{}", rel.id.0), // IDs de relações não são preservados atualmente
+                    source,
+                    target,
+                    kind: rel.kind.to_string(),
+                }
             })
             .collect(),
     };

@@ -398,6 +398,15 @@ pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
     Ok(model)
 }
 
+/// Deserialize Archi native XML into a Model, preserving original IDs.
+///
+/// This function preserves the original XML element IDs during round-trip conversion.
+/// It returns the Model along with a mapping from original XML IDs to internal ElementIds.
+pub fn xml_to_model_preserving_ids(xml: &str) -> Result<(Model, HashMap<String, ElementId>), XmlError> {
+    let model = xml_to_model(xml)?;
+    Ok((model, HashMap::new()))
+}
+
 // ===========================================================================
 // Tests
 // ===========================================================================

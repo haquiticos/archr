@@ -189,14 +189,14 @@ fn run_parse(input_path: &str, output_path: &str) -> ExitCode {
         }
     };
 
-    let model = match xml::xml_to_model(&xml_str) {
+    let (model, original_ids) = match xml::xml_to_model_preserving_ids(&xml_str) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("error: XML parse failed: {e}");
             return ExitCode::from(2);
         }
     };
-
+    let yaml_out = yaml::model_to_yaml_with_ids(&model, Some(&original_ids));
     let yaml_out = yaml::model_to_yaml(&model);
     if let Err(e) = fs::write(output_path, &yaml_out) {
         eprintln!("error: cannot write {output_path}: {e}");
@@ -224,7 +224,7 @@ fn run_diff(old_path: &str, new_path: &str) -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let existing = match xml::xml_to_model(&xml_str) {
+    let (existing, _existing_ids) = match xml::xml_to_model_preserving_ids(&xml_str) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("error: cannot parse {old_path}: {e}");
