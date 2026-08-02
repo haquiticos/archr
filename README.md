@@ -1,4 +1,18 @@
 # archr
+<p align="center">
+  <a href="https://github.com/haquiticos/archr/actions/workflows/build-rust.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/haquiticos/archr/build-rust.yml?branch=main&label=CI" alt="CI Status">
+  </a>
+  <a href="https://crates.io/crates/archr-core">
+    <img src="https://img.shields.io/crates/v/archr-core.svg" alt="Crates.io Version">
+  </a>
+  <a href="https://github.com/haquiticos/archr/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  </a>
+  <a href="https://crates.io/crates/archr-core">
+    <img src="https://img.shields.io/badge/rust-1.74+-blue.svg" alt="Rust MSRV">
+  </a>
+</p>
 
 A headless Rust engine for ArchiMate 3.2 — validate, manipulate, and export architecture models via CLI and YAML. Designed for AI agent integration.
 
@@ -10,6 +24,34 @@ A headless Rust engine for ArchiMate 3.2 — validate, manipulate, and export ar
 - **Diff** two models to detect added, removed, and modified elements
 - **Automatic layout** — grid placement by topological layer (no Sugiyama)
 - **Agent Skill** — PEP 723 Python wrapper for Claude Code, Copilot, and Codex
+
+## Installation
+
+### Prebuilt Binary (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/haquiticos/archr/releases) and run:
+```bash
+./archr --version
+```
+
+### Cargo Install
+
+```bash
+cargo install archr-core
+archr --version
+```
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/haquiticos/archr.git
+cd archr
+
+# Build
+cargo build --release
+# Binary at target/release/archr
+```
 
 ## Quick Start
 
@@ -155,6 +197,28 @@ archr/
 │   └── e2e.sh                     # End-to-end test suite
 └── .github/workflows/            # CI: build-rust, test-skill, e2e-test
 ```
+
+## Roadmap
+
+### Status
+**v1.0.0 core complete** — Full ArchiMate 3.2 validation, XML/YAML I/O, model diff, and CLI.
+
+### Next Moves
+- **LLM YAML robustness**: Improve schema validation for LLM-generated YAML (better error messages, partial parsing)
+- **Layout algorithm correctness**: Refine grid placement for complex diagrams
+- **Real-world XML parser resilience**: Enhance XML parsing for malformed but valid `.archimate` files
+- **Performance optimization**: Reduce memory usage and improve startup time
+- **Cross-platform testing**: Expand CI to include Windows and macOS builds
+- **Documentation improvements**: More examples, tutorials, and best practices
+
+### Future Features
+- **Web API**: RESTful interface for programmatic access
+- **GUI**: Desktop application for model visualization
+- **Plugin system**: Extend functionality with user-defined plugins
+- **Cloud integration**: Support for cloud-based model storage and collaboration
+
+### Community Feedback
+We welcome feature requests and feedback. Please open an issue or join our [Discussions](https://github.com/haquiticos/archr/discussions).
 
 ## Agent Skill
 

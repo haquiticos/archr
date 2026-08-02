@@ -1,7 +1,7 @@
 # ArchiMate Implementation Plan: `archr` v1.0
 
 > Based on [`docs/archimate_implementation_guide.md`](archimate_implementation_guide.md) v2.1.
-> Current repository: greenfield (docs only).
+> Repository status at time of writing: design phase (pre-implementation).
 
 ---
 

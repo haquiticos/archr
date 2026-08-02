@@ -58,8 +58,8 @@ further defined and clarified by project maintainers.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project team by contacting a maintainer at
-[INSERT CONTACT EMAIL].
+reported to the project team by opening a private [GitHub Security Advisory](https://github.com/haquiticos/archr/security/advisories/new)
+or contacting a maintainer directly via [GitHub Discussions](https://github.com/haquiticos/archr/discussions).
 
 All complaints will be reviewed and investigated and will result in a response
 that is deemed necessary and appropriate to the circumstances. The project team

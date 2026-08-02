@@ -5,8 +5,6 @@
 
 use crate::model::Model;
 use serde::Serialize;
-use std::collections::HashSet;
-use thiserror::Error;
 
 // ---------------------------------------------------------------------------
 // Error types
@@ -71,36 +69,11 @@ impl ModelDiffAnalyzer {
 
     /// Analyze how a new model differs from the existing one.
     ///
-    /// Returns `Ok(DiffReport)` if the new model is internally consistent,
-    /// or `Err(Vec<ReferenceError>)` if the new model has dangling references.
+    /// Returns `Ok(DiffReport)` — all relationships in the parsed model are guaranteed to have resolvable endpoints.
     pub fn analyze_update(&self, new_model: &Model) -> Result<DiffReport, Vec<ReferenceError>> {
-        // First, validate the new model's relationships reference real elements.
-        let mut errors = Vec::new();
-        let valid_names: HashSet<&str> =
-            new_model.iter_elements().map(|e| e.name.as_str()).collect();
-
-        for rel in new_model.iter_relations() {
-            let src = &new_model.element(rel.source).name;
-            let tgt = &new_model.element(rel.target).name;
-            if !valid_names.contains(src.as_str()) {
-                errors.push(ReferenceError {
-                    id: src.clone(),
-                    error_type: ReferenceErrorType::UndefinedId,
-                });
-            }
-            if !valid_names.contains(tgt.as_str()) {
-                errors.push(ReferenceError {
-                    id: tgt.clone(),
-                    error_type: ReferenceErrorType::UndefinedId,
-                });
-            }
-        }
-
-        if !errors.is_empty() {
-            return Err(errors);
-        }
-
+        // Relationships in parsed models are guaranteed to have resolvable endpoints (validated by parser).
         // Compute diff by name.
+
         let mut report = DiffReport::default();
 
         let new_names: std::collections::HashMap<&str, &str> = new_model

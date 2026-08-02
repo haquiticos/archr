@@ -6,9 +6,7 @@
 //! relationships live in the `Relations` folder as `<element xsi:type="archimate:*Relationship">`,
 //! and the diagram view uses `<child>`/`<sourceConnection>` nesting.
 
-use crate::model::{
-    ElementId, ElementKind, ElementLayer, Model, RelationId, RelationKind,
-};
+use crate::model::{ElementId, ElementKind, ElementLayer, Model, RelationId, RelationKind};
 use std::collections::HashMap;
 use std::fmt::Write as _;
 use thiserror::Error;
@@ -51,7 +49,10 @@ pub fn model_to_xml(
         .collect();
 
     let mut xml = String::new();
-    let _ = writeln!(xml, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+    let _ = writeln!(
+        xml,
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+    );
     let _ = write!(
         xml,
         "<archimate:model \
@@ -98,17 +99,17 @@ pub fn model_to_xml(
 }
 
 /// Emit one `<folder>` per non-empty metamodel layer, in canonical Archi order.
-fn emit_element_folders(
-    xml: &mut String,
-    model: &Model,
-    elem_ids: &HashMap<ElementId, String>,
-) {
+fn emit_element_folders(xml: &mut String, model: &Model, elem_ids: &HashMap<ElementId, String>) {
     // Canonical folder order. Technology and Physical share a single folder.
     let canonical: &[(ElementLayer, &str, &str)] = &[
         (ElementLayer::Strategy, "Strategy", "strategy"),
         (ElementLayer::Business, "Business", "business"),
         (ElementLayer::Application, "Application", "application"),
-        (ElementLayer::Technology, "Technology &amp; Physical", "technology"),
+        (
+            ElementLayer::Technology,
+            "Technology &amp; Physical",
+            "technology",
+        ),
         (ElementLayer::Motivation, "Motivation", "motivation"),
         (
             ElementLayer::Implementation,
@@ -182,13 +183,25 @@ fn emit_diagram(
     // Sort elements by position (Y then X) for proper visual layering.
     let mut sorted: Vec<_> = model.iter_elements().collect();
     sorted.sort_by(|a, b| {
-        let (_, ya, _, _) = positions.get(&a.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
-        let (_, yb, _, _) = positions.get(&b.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+        let (_, ya, _, _) = positions
+            .get(&a.id)
+            .copied()
+            .unwrap_or((0.0, 0.0, 0.0, 0.0));
+        let (_, yb, _, _) = positions
+            .get(&b.id)
+            .copied()
+            .unwrap_or((0.0, 0.0, 0.0, 0.0));
         ya.partial_cmp(&yb)
             .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| {
-                let (xa, _, _, _) = positions.get(&a.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
-                let (xb, _, _, _) = positions.get(&b.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+                let (xa, _, _, _) = positions
+                    .get(&a.id)
+                    .copied()
+                    .unwrap_or((0.0, 0.0, 0.0, 0.0));
+                let (xb, _, _, _) = positions
+                    .get(&b.id)
+                    .copied()
+                    .unwrap_or((0.0, 0.0, 0.0, 0.0));
                 xa.partial_cmp(&xb).unwrap_or(std::cmp::Ordering::Equal)
             })
     });
@@ -204,8 +217,7 @@ fn emit_diagram(
             xml,
             "      <child xsi:type=\"archimate:DiagramObject\" id=\"{}\" \
              archimateElement=\"{}\">",
-            child_id,
-            elem_ids[&elem.id],
+            child_id, elem_ids[&elem.id],
         );
         let _ = writeln!(
             xml,
@@ -248,7 +260,9 @@ fn folder_for_layer(layer: ElementLayer) -> (&'static str, &'static str) {
             ("Technology &amp; Physical", "technology")
         }
         ElementLayer::Motivation => ("Motivation", "motivation"),
-        ElementLayer::Implementation => ("Implementation &amp; Migration", "implementation_migration"),
+        ElementLayer::Implementation => {
+            ("Implementation &amp; Migration", "implementation_migration")
+        }
         ElementLayer::Other => ("Other", "other"),
     }
 }
@@ -363,9 +377,8 @@ pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
             .strip_suffix("Relationship")
             .unwrap_or(type_local);
 
-        let kind = RelationKind::from_name(kind_str).ok_or_else(|| {
-            XmlError::Parse(format!("Unknown relation kind: {}", kind_str))
-        })?;
+        let kind = RelationKind::from_name(kind_str)
+            .ok_or_else(|| XmlError::Parse(format!("Unknown relation kind: {}", kind_str)))?;
 
         let source = elem
             .source
@@ -571,8 +584,7 @@ mod tests {
         assert_eq!(parsed_kinds.get("Goal"), Some(&ElementKind::Goal));
 
         // Relationships preserved by kind.
-        let rel_kinds: Vec<RelationKind> =
-            parsed.iter_relations().map(|r| r.kind).collect();
+        let rel_kinds: Vec<RelationKind> = parsed.iter_relations().map(|r| r.kind).collect();
         assert!(rel_kinds.contains(&RelationKind::Serving));
         assert!(rel_kinds.contains(&RelationKind::Realization));
     }

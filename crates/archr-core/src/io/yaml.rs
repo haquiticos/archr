@@ -58,8 +58,8 @@ pub type ParseResult<T> = Result<T, Vec<SchemaError>>;
 /// - Any element `id` is duplicated
 /// - Any `id` is empty or contains spaces
 pub fn parse_yaml(input: &str) -> ParseResult<Model> {
-    let yaml_model: YamlModel = serde_yaml::from_str(input)
-        .map_err(|_| vec![SchemaError::InvalidId])?;
+    let yaml_model: YamlModel =
+        serde_yaml::from_str(input).map_err(|_| vec![SchemaError::InvalidId])?;
 
     let YamlModelInner {
         name,
@@ -112,8 +112,7 @@ pub fn parse_yaml(input: &str) -> ParseResult<Model> {
     let mut model = Model::new(name);
     let mut elem_ids: Vec<ElementId> = Vec::with_capacity(elements.len());
     for elem in &elements {
-        let kind = ElementKind::from_name(&elem.kind)
-            .expect("validated above");
+        let kind = ElementKind::from_name(&elem.kind).expect("validated above");
         let id = model.add_element(&elem.name, kind);
         elem_ids.push(id);
     }
@@ -126,8 +125,7 @@ pub fn parse_yaml(input: &str) -> ParseResult<Model> {
     }
 
     for rel in &relationships {
-        let kind = RelationKind::from_name(&rel.kind)
-            .expect("validated above");
+        let kind = RelationKind::from_name(&rel.kind).expect("validated above");
         let source = str_to_elem[&rel.source];
         let target = str_to_elem[&rel.target];
         model.link(source, target, kind);
@@ -209,7 +207,7 @@ model:
         assert!(result.is_err());
         let errors = result.unwrap_err();
         assert!(
-            errors.iter().any(|e| *e == SchemaError::UnknownKind),
+            errors.contains(&SchemaError::UnknownKind),
             "expected UnknownKind in {:?}",
             errors
         );
@@ -235,7 +233,7 @@ model:
         assert!(result.is_err());
         let errors = result.unwrap_err();
         assert!(
-            errors.iter().any(|e| *e == SchemaError::UndefinedId),
+            errors.contains(&SchemaError::UndefinedId),
             "expected UndefinedId in {:?}",
             errors
         );
@@ -259,7 +257,7 @@ model:
         assert!(result.is_err());
         let errors = result.unwrap_err();
         assert!(
-            errors.iter().any(|e| *e == SchemaError::DuplicateId),
+            errors.contains(&SchemaError::DuplicateId),
             "expected DuplicateId in {:?}",
             errors
         );
@@ -280,7 +278,7 @@ model:
         assert!(result.is_err());
         let errors = result.unwrap_err();
         assert!(
-            errors.iter().any(|e| *e == SchemaError::InvalidId),
+            errors.contains(&SchemaError::InvalidId),
             "expected InvalidId in {:?}",
             errors
         );

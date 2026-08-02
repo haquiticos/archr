@@ -1,37 +1,84 @@
 name: Bug report
-about: Create a report to help us improve
-title: '[BUG] '
-labels: bug
-assignees: ''
+description: Report a bug or unexpected behavior in archr
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the fields below.
+        Before submitting, search [existing issues](https://github.com/haquiticos/archr/issues) to avoid duplicates.
 
----
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of what the bug is.
+    validations:
+      required: true
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands and input files that trigger the bug.
+      placeholder: |
+        1. Create model.yaml with: ...
+        2. Run: archr validate --input model.yaml
+        3. See error: ...
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened (error message, exit code, panic, etc.).
+    validations:
+      required: true
 
-**Actual behavior**
-What actually happened instead.
+  - type: input
+    id: version
+    attributes:
+      label: archr version
+      description: Output of `archr --version`
+      placeholder: "1.0.0"
+    validations:
+      required: true
 
-**Environment**
-- archr version: [e.g., 1.0.0]
-- OS: [e.g., Ubuntu 22.04]
-- Rust version: [e.g., 1.74]
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Ubuntu 22.04, macOS 14, Windows 11"
+    validations:
+      required: true
 
-**Logs**
-If applicable, add logs here.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output / stack trace
+      description: Paste stderr output, stack traces, or attach the YAML/XML input that reproduces the issue.
+      render: shell
+    validations:
+      required: false
 
-**Additional context**
-Add any other context about the problem here.
-
-**Screenshot (if applicable)**
-If the bug is visual or related to layout, please add a screenshot.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context — workarounds tried, related issues, etc.
+    validations:
+      required: false

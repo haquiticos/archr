@@ -1,6 +1,8 @@
 # Implementation Guide: `archr` — Headless ArchiMate Engine + AI Skill
 
 > **Version 2.1** — Rust Engine (CLI) + AI Skill in **Monorepo** with strict code isolation. The Skill follows the [Agent Skills Specification](https://agentskills.io/specification): `SKILL.md` + `scripts/archr.py` self-contained (PEP 723), compatible with VS Code Copilot, Claude Code, and OpenAI Codex.
+>
+> **Note:** Code snippets below are illustrative design intent from the original architecture phase. The actual implementation in `crates/archr-core/src/` may differ — always refer to the source for ground truth.
 
 ---
 

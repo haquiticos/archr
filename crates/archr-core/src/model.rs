@@ -118,44 +118,61 @@ impl ElementKind {
         use ElementKind::*;
         match self {
             // Motivation
-            Stakeholder | Driver | Assessment | Goal | Outcome
-            | Principle | Requirement | Constraint | Meaning | Value
-                => ElementLayer::Motivation,
+            Stakeholder | Driver | Assessment | Goal | Outcome | Principle | Requirement
+            | Constraint | Meaning | Value => ElementLayer::Motivation,
 
             // Strategy
-            Resource | Capability | ValueStream | CourseOfAction
-                => ElementLayer::Strategy,
+            Resource | Capability | ValueStream | CourseOfAction => ElementLayer::Strategy,
 
             // Business
-            BusinessActor | BusinessRole | BusinessCollaboration | BusinessInterface
-            | BusinessProcess | BusinessFunction | BusinessInteraction | BusinessEvent
-            | BusinessService | BusinessObject | Contract | Representation | Product
-                => ElementLayer::Business,
+            BusinessActor
+            | BusinessRole
+            | BusinessCollaboration
+            | BusinessInterface
+            | BusinessProcess
+            | BusinessFunction
+            | BusinessInteraction
+            | BusinessEvent
+            | BusinessService
+            | BusinessObject
+            | Contract
+            | Representation
+            | Product => ElementLayer::Business,
 
             // Application
-            ApplicationComponent | ApplicationCollaboration | ApplicationInterface
-            | ApplicationFunction | ApplicationProcess | ApplicationInteraction
-            | ApplicationEvent | ApplicationService | DataObject
-                => ElementLayer::Application,
+            ApplicationComponent
+            | ApplicationCollaboration
+            | ApplicationInterface
+            | ApplicationFunction
+            | ApplicationProcess
+            | ApplicationInteraction
+            | ApplicationEvent
+            | ApplicationService
+            | DataObject => ElementLayer::Application,
 
             // Technology
-            Node | Device | SystemSoftware | TechnologyCollaboration
-            | TechnologyInterface | Path | CommunicationNetwork | Artifact
-            | TechnologyFunction | TechnologyProcess | TechnologyInteraction
-            | TechnologyEvent | TechnologyService
-                => ElementLayer::Technology,
+            Node
+            | Device
+            | SystemSoftware
+            | TechnologyCollaboration
+            | TechnologyInterface
+            | Path
+            | CommunicationNetwork
+            | Artifact
+            | TechnologyFunction
+            | TechnologyProcess
+            | TechnologyInteraction
+            | TechnologyEvent
+            | TechnologyService => ElementLayer::Technology,
 
             // Physical
-            Equipment | Facility | Material | DistributionNetwork
-                => ElementLayer::Physical,
+            Equipment | Facility | Material | DistributionNetwork => ElementLayer::Physical,
 
             // Implementation & Migration
-            WorkPackage | Deliverable | Plateau | Gap
-                => ElementLayer::Implementation,
+            WorkPackage | Deliverable | Plateau | Gap => ElementLayer::Implementation,
 
             // Other
-            Grouping | Location | AndJunction | OrJunction
-                => ElementLayer::Other,
+            Grouping | Location | AndJunction | OrJunction => ElementLayer::Other,
         }
     }
 
@@ -475,12 +492,7 @@ impl Model {
     }
 
     /// Adds a relationship and returns its typed index.
-    pub fn link(
-        &mut self,
-        source: ElementId,
-        target: ElementId,
-        kind: RelationKind,
-    ) -> RelationId {
+    pub fn link(&mut self, source: ElementId, target: ElementId, kind: RelationKind) -> RelationId {
         let id = RelationId(self.relations.len());
         self.relations.push(Relationship {
             id,
@@ -587,10 +599,16 @@ mod tests {
         assert_eq!(ElementKind::Stakeholder.layer(), ElementLayer::Motivation);
         assert_eq!(ElementKind::Resource.layer(), ElementLayer::Strategy);
         assert_eq!(ElementKind::BusinessActor.layer(), ElementLayer::Business);
-        assert_eq!(ElementKind::ApplicationComponent.layer(), ElementLayer::Application);
+        assert_eq!(
+            ElementKind::ApplicationComponent.layer(),
+            ElementLayer::Application
+        );
         assert_eq!(ElementKind::Node.layer(), ElementLayer::Technology);
         assert_eq!(ElementKind::Equipment.layer(), ElementLayer::Physical);
-        assert_eq!(ElementKind::WorkPackage.layer(), ElementLayer::Implementation);
+        assert_eq!(
+            ElementKind::WorkPackage.layer(),
+            ElementLayer::Implementation
+        );
         assert_eq!(ElementKind::Grouping.layer(), ElementLayer::Other);
     }
 
@@ -639,10 +657,7 @@ mod tests {
             RelationKind::Flow,
             RelationKind::Specialization,
         ] {
-            assert_eq!(
-                RelationKind::from_name(kind.type_name()),
-                Some(kind),
-            );
+            assert_eq!(RelationKind::from_name(kind.type_name()), Some(kind),);
         }
     }
 

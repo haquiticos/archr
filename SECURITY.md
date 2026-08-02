@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in `archr`, please report it to us privately via [GitHub Security Advisories](https://github.com/haquiticos/archr/security/advisories/new) or by emailing [maintainer email address].
+If you discover a security vulnerability in `archr`, please report it to us privately via [GitHub Security Advisories](https://github.com/haquiticos/archr/security/advisories/new).
 
 **Do not** open a public issue to report a vulnerability. Public disclosure may allow attackers to replicate and exploit the issue before we can fix it.
 

@@ -14,7 +14,11 @@ use std::fs;
 use std::process::ExitCode;
 
 #[derive(Parser)]
-#[command(name = "archr", version = "1.0.0", about = "Headless ArchiMate 3.2 engine")]
+#[command(
+    name = "archr",
+    version = "1.0.0",
+    about = "Headless ArchiMate 3.2 engine"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -164,9 +168,11 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
         return ExitCode::from(2);
     }
 
-    eprintln!("Generated {output_path} ({} elements, {} relationships)",
+    eprintln!(
+        "Generated {output_path} ({} elements, {} relationships)",
         model.element_count(),
-        model.relation_count());
+        model.relation_count()
+    );
     ExitCode::from(0)
 }
 
@@ -197,9 +203,11 @@ fn run_parse(input_path: &str, output_path: &str) -> ExitCode {
         return ExitCode::from(2);
     }
 
-    eprintln!("Parsed {input_path} -> {output_path} ({} elements, {} relationships)",
+    eprintln!(
+        "Parsed {input_path} -> {output_path} ({} elements, {} relationships)",
         model.element_count(),
-        model.relation_count());
+        model.relation_count()
+    );
     ExitCode::from(0)
 }
 

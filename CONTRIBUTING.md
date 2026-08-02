@@ -75,21 +75,11 @@ If your PR closes an issue, include it in your commit message using `Closes #<N>
 
 ## Project Structure
 
-`archr` consists of two crates in the workspace:
+`archr` is a single-crate workspace (`crates/archr-core/`) that produces both the library and the `archr` binary (CLI). The entry point for understanding the architecture is the [`README.md`](README.md), which includes a "Project Structure" block describing the layout.
 
-- `archr-core`: Core library (validation, diff, layout, YAML/XML I/O)
-- `archr`: Binary wrapper (CLI interface)
+## Design Documents
 
-The entry point for understanding the architecture is the [`README.md`](README.md), which includes a "Project Structure" block describing the layout.
-
-## Portuguese Design Docs
-
-The repository contains design documents in Portuguese:
-- `docs/estrategia.md` — Strategy
-- `docs/plano_implementacao.md` — Implementation plan
-- `docs/guia_implementacao.md` — Implementation guide
-
-These are historical design artifacts and not required reading for contributors.
+The `docs/` directory contains historical design documents (strategy, implementation plan, implementation guide) describing the original architecture decisions. These are optional reading for contributors who want deeper context.
 
 ## Code of Conduct
 
