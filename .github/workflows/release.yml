@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build
+        run: cargo build --release -p archr-core
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: target/release/archr
+          prerelease: false
+          publish: true
+          token: ${{ secrets.GITHUB_TOKEN }}
