@@ -1,116 +1,55 @@
-# ArchiMate 3.2 Derivability Rules
+# ArchiMate 3.2 Derivability Rules (Legacy)
 
-## Overview
+> ⚠️ **Deprecated**: This document is now a redirect to the authoritative spec.
+>
+> For the current, generated reference, see:
+> - **[docs/SPEC.md](../docs/SPEC.md)** — Single source of truth generated from archr's Rust code
+> - **[examples/gen_spec.py](../../examples/gen_spec.py)** — Script to regenerate the spec
 
-ArchiMate 3.2 defines 8 layers and 11 relationship types. Derivability rules govern which relationships are valid between which layers.
+## Legacy Information (Out of Date)
 
-## 8 Layers
+These rules are **out of sync** with the current implementation in `validate.rs::ALLOWED`. Do not use them for validation.
 
-1. **Motivation** - Goals, requirements, drivers, constraints
-2. **Strategy** - Roadmaps, principles, KPIs, goals
-3. **Business** - Business actors, functions, processes, events
-4. **Application** - Application components, interfaces, services
-5. **Technology** - Infrastructure components, systems, networks
-6. **Physical** - Hardware, locations, facilities, devices
-7. **Implementation** - Projects, deliverables, migration plans
-8. **Other** - Concepts, artifacts, principles
+### Historical Motivation Rules (Incorrect)
 
-## 11 Relationship Types
+The old documentation claimed:
+> "**Motivation** can only relate to **Core** layers (Business, Application, Technology) using **Association**"
 
-### Structural Relationships (4)
-- **Composition** - Whole-part relationship
-- **Aggregation** - Cluster relationship
-- **Assignment** - Usage/ownership relationship
-- **Realization** - Implementation of behavior
+This was **incorrect**. The actual implementation in `validate.rs::ALLOWED` allows `Association` between any layers, including:
+- Motivation → Physical
+- Motivation → Implementation
+- Motivation → Other
 
-### Dependency Relationships (4)
-- **Serving** - Serves a behavior/function
-- **Access** - Provides access to a service/resource
-- **Influence** - Affects the course of events
-- **Association** - General relationship
+### Historical Core Layer Claims (Incomplete)
 
-### Dynamic Relationships (2)
-- **Triggering** - Initiates a behavior
-- **Flow** - Transfers something between elements
+The old documentation claimed:
+> "Business → Application (all 11)"
 
-### Other Relationships (1)
-- **Specialization** - Generalization relationship
+This was **incomplete**. The actual implementation only allows:
+- Business → Application: Realization (and Association)
 
-## Derivability Rules Summary
+Other structural relationships between Core layers are limited by the ALLOWED matrix.
 
-### Same Layer Combinations
-All 11 relationship types are allowed between elements of the **same layer**:
-- Business → Business
-- Application → Application
-- Technology → Technology
-- Physical → Physical
-- Implementation → Implementation
-- Other → Other
+### Correct Rules (From validate.rs)
 
-### Motivation Layer Combinations
-**Motivation** can only relate to **Core** layers (Business, Application, Technology) using **Association**:
+The correct derivability rules are documented in `docs/SPEC.md` and implemented in `validate.rs::ALLOWED`:
 
-| Source Layer | Target Layer | Allowed Relations |
-|--------------|--------------|-------------------|
-| Motivation   | Motivation   | Association       |
-| Motivation   | Business     | Association       |
-| Motivation   | Application  | Association       |
-| Motivation   | Technology   | Association       |
+| Relationship | Allowed Source Layer | Allowed Target Layer |
+|--------------|---------------------|---------------------|
+| Composition | Composite element (any layer) | Any element (any layer) |
+| Aggregation | Aggregator (any layer) | Aggregated element (any layer) |
+| Assignment | BusinessActor (Business) | BusinessFunction (Business) |
+| Realization | ApplicationComponent (Application) | BusinessFunction, BusinessProcess (Business) |
+| Serving | BusinessService (Business) | BusinessFunction (Business) |
+| Access | ApplicationComponent (Application) | DataObject (Application) |
+| Influence | Motivation (Motivation) | Same layer only |
+| Association | Any element | Any element |
+| Triggering | Triggering element (any layer) | Triggered element (any layer) |
+| Flow | Flowing element (any layer) | Flowing element (any layer) |
+| Specialization | Specializing element (any layer) | Specialized element (any layer) |
 
-### Motivation → Core (Any Relation)
-**Motivation** elements can be related to **Core** elements (Business, Application, Technology) using **only Association**:
-- Goal → BusinessFunction (Association)
-- Requirement → ApplicationComponent (Association)
-- Driver → TechnologyInfrastructure (Association)
+## References
 
-### Core Layer Combinations (Business, Application, Technology)
-All 11 relationship types are allowed between **Core** layers:
-- Business → Business (all 11)
-- Business → Application (all 11)
-- Business → Technology (all 11)
-- Application → Business (all 11)
-- Application → Application (all 11)
-- Application → Technology (all 11)
-- Technology → Business (all 11)
-- Technology → Application (all 11)
-- Technology → Technology (all 11)
-
-### Serving Relationship
-**Serving** (Dependency) must be directed **downward** from **Core** to **Core**:
-- BusinessActor → BusinessFunction (Serves)
-- ApplicationComponent → BusinessFunction (Serves)
-- BusinessFunction → ApplicationComponent (Accesses)
-- ApplicationFunction → ApplicationComponent (Accesses)
-
-### Access Relationship
-**Access** (Dependency) must be directed **downward** from **Application** to **Technology**:
-- ApplicationInterface → TechnologyInterface (Access)
-- ApplicationService → TechnologyService (Access)
-
-### Influence Relationship
-**Influence** (Dependency) must be directed **downward** from **Motivation** or **Core**:
-- MotivationElement → AnyCoreElement (Influences)
-- BusinessActor → BusinessFunction (Influences)
-- ApplicationComponent → BusinessFunction (Influences)
-
-### Association Relationship
-**Association** (Dependency) is the most permissive and can be used:
-- Between **any** two layers
-- In **any direction**
-- For most relationship types where other rules don't apply
-
-### Structural Relationships (Composition, Aggregation, Assignment, Realization)
-Structural relationships follow the layer rules above but have specific semantics:
-- **Composition** - Exclusive whole/part (must not overlap)
-- **Aggregation** - Optional whole/part (may overlap)
-- **Assignment** - Usage/ownership of a behavior
-- **Realization** - Implementation of behavior by structure
-
-### Dynamic Relationships (Triggering, Flow)
-Dynamic relationships also follow the layer rules above but apply to behavioral elements:
-- **Triggering** - Initiates a behavior (same layer)
-- **Flow** - Transfers value/data (same layer)
-
-### Specialization Relationship
-**Specialization** (Generalization) can only relate **same layer** elements:
-- Same layer, different specialization levels
+- **[docs/SPEC.md](../docs/SPEC.md)** — Authoritative, auto-generated spec
+- [validate.rs](../../crates/archr-core/src/validate.rs) — Implementation of derivability rules
+- [model.rs](../../crates/archr-core/src/model.rs) — ElementKind and ElementLayer definitions

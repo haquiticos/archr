@@ -27,5 +27,16 @@ jobs:
       - name: Run tests
         run: cargo test --workspace
 
+      - name: Regenerate SPEC.md from code
+        run: python3 gen_spec.py
+
+      - name: Verify SPEC.md is up to date
+        run: |
+          if [ -n "$(git diff docs/SPEC.md)" ]; then
+            echo "❌ docs/SPEC.md is out of date! Run 'python3 gen_spec.py' to regenerate."
+            git diff --stat docs/SPEC.md
+            exit 1
+          fi
+
       - name: Build release binary
         run: cargo build --release -p archr-core

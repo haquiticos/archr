@@ -47,6 +47,8 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 
 ## Relationship Rules (ArchiMate 3.2)
 
+**Note**: These rules are derived from the implementation. See [docs/SPEC.md](../docs/SPEC.md) for authoritative documentation.
+
 ### Layers (8)
 1. **Motivation** - Goals, requirements, drivers
 2. **Strategy** - Roadmaps, principles, KPIs
@@ -63,17 +65,29 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 - **Dynamic** (2): Triggering, Flow
 - **Other** (1): Specialization
 
-### Key Constraints
+### Key Constraints (From Implementation)
+
 | Layer Pair | Allowed Relations |
 |------------|-------------------|
-| Same Layer | Composition, Aggregation, Assignment, Realization |
-| Motivation → Core (Business/App/Technology) | Only Association |
-| Core → Same Layer (Business/App/Technology) | All 11 types |
-| Serving | Serves Core (downward) |
-| Access | Accesses Infrastructure (downward) |
-| Influence | Motivation/Core only (downward) |
-| Association | Any layer pair |
+| Same Layer | All 11 types (except limitations apply per type) |
+| Same Layer → Same Layer | All 11 types with restrictions |
+| Same Layer → Different Layer | Limited by relationship type |
 
+### Detailed Rules
+
+See [docs/SPEC.md](../docs/SPEC.md) for complete derivability rules:
+
+- **Composition**: Any layer → Any layer (composite element source)
+- **Aggregation**: Same layer only
+- **Assignment**: BusinessActor → BusinessFunction only
+- **Realization**: ApplicationComponent → BusinessFunction, BusinessProcess
+- **Serving**: BusinessService → BusinessFunction
+- **Access**: ApplicationComponent → DataObject
+- **Influence**: Motivation → Same layer only
+- **Association**: Any layer → Any layer
+- **Triggering**: Same layer only
+- **Flow**: Same layer only
+- **Specialization**: Any layer → Any layer
 ## Exit Codes
 
 | Code | Meaning |
@@ -84,3 +98,10 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 | 3 | Binary version incompatible (requires ≥1.0.0) |
 | 4 | Subprocess timeout |
 | 64 | Invalid arguments |
+
+## References
+
+- **[docs/SPEC.md](../docs/SPEC.md)** — Authoritative, auto-generated spec
+- **[validate.rs](../../crates/archr-core/src/validate.rs)** — Implementation details
+- **[model.rs](../../crates/archr-core/src/model.rs)** — Element definitions
+- **[archimate.ecore](./references/archimate.ecore)** — Archi metamodel (MIT license)

@@ -6,3 +6,5 @@ pub mod io {
 pub mod validate;
 pub mod diff;
 pub mod layout;
+pub mod test_conformance;
+pub mod test_ecore;
