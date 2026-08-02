@@ -76,13 +76,17 @@ const ALLOWED: &[(ElementLayer, RelationKind, ElementLayer)] = &[
     // -----------------------------------------------------------------------
     // Serving: directional descending (higher layer serves lower layer)
     // -----------------------------------------------------------------------
-    (ElementLayer::Business, RelationKind::Serving, ElementLayer::Application),
-    (ElementLayer::Application, RelationKind::Serving, ElementLayer::Business),
-    (ElementLayer::Application, RelationKind::Serving, ElementLayer::Strategy),
-    (ElementLayer::Technology, RelationKind::Serving, ElementLayer::Application),
-    (ElementLayer::Technology, RelationKind::Serving, ElementLayer::Business),
+    // Descending chain (active structure serves the behavior above it):
+    //   Strategy ← Business ← Application ← Technology ← Physical
+    // Permitted skips documented in the README:
+    //   Physical→Technology, Technology→Application, Technology→Business,
+    //   Application→Business, Application→Strategy, Business→Strategy.
     (ElementLayer::Physical, RelationKind::Serving, ElementLayer::Technology),
     (ElementLayer::Technology, RelationKind::Serving, ElementLayer::Application),
+    (ElementLayer::Technology, RelationKind::Serving, ElementLayer::Business),
+    (ElementLayer::Application, RelationKind::Serving, ElementLayer::Business),
+    (ElementLayer::Application, RelationKind::Serving, ElementLayer::Strategy),
+    (ElementLayer::Business, RelationKind::Serving, ElementLayer::Strategy),
 
     // -----------------------------------------------------------------------
     // Access: Application↔Technology, Application↔Business, Application↔DataObject
@@ -328,7 +332,7 @@ mod tests {
         let mut model = create_model();
         let actor = model.add_element("BusinessActor", ElementKind::BusinessActor);
         let component = model.add_element("ApplicationComponent", ElementKind::ApplicationComponent);
-        model.link(actor, component, RelationKind::Serving);
+        model.link(component, actor, RelationKind::Serving);
         let result = validate_model(&model);
         assert!(result.success);
     }
@@ -386,7 +390,7 @@ mod tests {
         let mut model = create_model();
         let actor = model.add_element("BusinessActor", ElementKind::BusinessActor);
         let component = model.add_element("ApplicationComponent", ElementKind::ApplicationComponent);
-        model.link(actor, component, RelationKind::Serving);
+        model.link(component, actor, RelationKind::Serving);
         let result = validate_model(&model);
         assert!(result.success);
         assert!(result.errors.is_empty());
@@ -401,5 +405,111 @@ mod tests {
         let result = validate_model(&model);
         assert!(!result.success);
         assert!(!result.errors.is_empty());
+    }
+    // --- Regression tests for Serving block fixes (issue #4) ---
+    // Allowed descending directions (README rule "Tech→App→Business→Strategy"):
+    //   Physical→Technology, Technology→Application, Technology→Business,
+    //   Application→Business, Application→Strategy, Business→Strategy.
+
+
+
+
+    #[test]
+    fn test_serving_valid_tech_app() {
+        let mut model = create_model();
+        let node = model.add_element("Node", ElementKind::Node);
+        let component = model.add_element("ApplicationComponent", ElementKind::ApplicationComponent);
+        model.link(node, component, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(result.success, "Technology→Application Serving should be valid");
+    }
+
+    #[test]
+    fn test_serving_valid_tech_business() {
+        let mut model = create_model();
+        let node = model.add_element("Node", ElementKind::Node);
+        let actor = model.add_element("BusinessActor", ElementKind::BusinessActor);
+        model.link(node, actor, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(result.success, "Technology→Business Serving should be valid");
+    }
+
+    #[test]
+    fn test_serving_valid_app_business() {
+        let mut model = create_model();
+        let component = model.add_element("ApplicationComponent", ElementKind::ApplicationComponent);
+        let actor = model.add_element("BusinessActor", ElementKind::BusinessActor);
+        model.link(component, actor, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(result.success, "Application→Business Serving should be valid");
+    }
+
+    #[test]
+    fn test_serving_valid_app_strategy() {
+        let mut model = create_model();
+        let process = model.add_element("BusinessProcess", ElementKind::BusinessProcess);
+        let value_stream = model.add_element("ValueStream", ElementKind::ValueStream);
+        model.link(process, value_stream, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(result.success, "Application→Strategy Serving should be valid");
+    }
+
+    #[test]
+    fn test_serving_valid_business_strategy() {
+        let mut model = create_model();
+        let actor = model.add_element("BusinessActor", ElementKind::BusinessActor);
+        let value_stream = model.add_element("ValueStream", ElementKind::ValueStream);
+        model.link(actor, value_stream, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(result.success, "Business→Strategy Serving should be valid");
+    }
+
+    #[test]
+    fn test_serving_invalid_business_app() {
+        let mut model = create_model();
+        let actor = model.add_element("BusinessActor", ElementKind::BusinessActor);
+        let component = model.add_element("ApplicationComponent", ElementKind::ApplicationComponent);
+        model.link(actor, component, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(!result.success, "Business→Application Serving should be invalid");
+        assert_eq!(result.errors.len(), 1);
+        assert_eq!(result.errors[0].code, "INVALID_RELATIONSHIP");
+    }
+
+    #[test]
+    fn test_serving_invalid_app_tech() {
+        let mut model = create_model();
+        let component = model.add_element("ApplicationComponent", ElementKind::ApplicationComponent);
+        let node = model.add_element("Node", ElementKind::Node);
+        model.link(component, node, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(!result.success, "Application→Technology Serving should be invalid");
+        assert_eq!(result.errors.len(), 1);
+        assert_eq!(result.errors[0].code, "INVALID_RELATIONSHIP");
+    }
+
+
+    #[test]
+    fn test_serving_invalid_same_layer_tech() {
+        let mut model = create_model();
+        let node1 = model.add_element("Node", ElementKind::Node);
+        let node2 = model.add_element("Node", ElementKind::Node);
+        model.link(node1, node2, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(!result.success, "Technology→Technology Serving should be invalid");
+        assert_eq!(result.errors.len(), 1);
+        assert_eq!(result.errors[0].code, "INVALID_RELATIONSHIP");
+    }
+
+    #[test]
+    fn test_serving_invalid_same_layer_business() {
+        let mut model = create_model();
+        let actor = model.add_element("BusinessActor", ElementKind::BusinessActor);
+        let role = model.add_element("BusinessRole", ElementKind::BusinessRole);
+        model.link(actor, role, RelationKind::Serving);
+        let result = validate_model(&model);
+        assert!(!result.success, "Business→Business Serving should be invalid");
+        assert_eq!(result.errors.len(), 1);
+        assert_eq!(result.errors[0].code, "INVALID_RELATIONSHIP");
     }
 }
