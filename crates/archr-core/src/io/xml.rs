@@ -21,6 +21,16 @@ pub enum XmlError {
     Parse(String),
 }
 
+/// Parsed Model with original XML ID mappings preserved for round-trip fidelity.
+pub type XmlParseResult = Result<
+    (
+        Model,
+        HashMap<String, ElementId>,
+        HashMap<String, RelationId>,
+    ),
+    XmlError,
+>;
+
 // ===========================================================================
 // Serialization — Model → Archi native XML
 // ===========================================================================
@@ -28,20 +38,48 @@ pub enum XmlError {
 /// Serialize a Model to Archi native XML.
 ///
 /// `positions` maps element id to `(x, y, width, height)` for the diagram view.
+/// When `elem_id_map`/`rel_id_map` are provided, original string IDs are used
+/// instead of fresh UUIDs, preserving identifiers across round-trip conversion.
 pub fn model_to_xml(
     model: &Model,
     positions: &HashMap<ElementId, (f64, f64, f64, f64)>,
+    elem_id_map: Option<&HashMap<String, ElementId>>,
+    rel_id_map: Option<&HashMap<String, RelationId>>,
 ) -> Result<String, XmlError> {
     let model_id = Uuid::new_v4();
+
+    // Reverse maps for lookup by internal ID; fall back to UUIDs when no mapping.
+    let elem_rev: HashMap<&ElementId, &str> = elem_id_map
+        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
+        .unwrap_or_default();
+    let rel_rev: HashMap<&RelationId, &str> = rel_id_map
+        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
+        .unwrap_or_default();
 
     // Stable string IDs for cross-referencing (elements, relationships, diagram objects).
     let elem_ids: HashMap<ElementId, String> = model
         .iter_elements()
-        .map(|e| (e.id, Uuid::new_v4().to_string()))
+        .map(|e| {
+            (
+                e.id,
+                elem_rev
+                    .get(&e.id)
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
+            )
+        })
         .collect();
     let rel_ids: HashMap<RelationId, String> = model
         .iter_relations()
-        .map(|r| (r.id, Uuid::new_v4().to_string()))
+        .map(|r| {
+            (
+                r.id,
+                rel_rev
+                    .get(&r.id)
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
+            )
+        })
         .collect();
     let child_ids: HashMap<ElementId, String> = model
         .iter_elements()
@@ -337,6 +375,20 @@ fn strip_archimate_prefix(s: &str) -> &str {
 
 /// Deserialize Archi native XML into a Model.
 pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
+    Ok(parse_xml(xml)?.0)
+}
+
+/// Deserialize Archi native XML into a Model, preserving original XML IDs.
+///
+/// Returns the Model along with mappings from original XML identifiers to
+/// internal ElementIds and RelationIds, enabling faithful round-trip conversion.
+pub fn xml_to_model_preserving_ids(xml: &str) -> XmlParseResult {
+    let (model, elem_ids, rel_ids) = parse_xml(xml)?;
+    Ok((model, elem_ids, rel_ids))
+}
+
+/// Core XML parser: returns Model plus original-ID mappings.
+fn parse_xml(xml: &str) -> XmlParseResult {
     let xml_model: XmlModel = quick_xml::de::from_str(xml)
         .map_err(|e| XmlError::Parse(format!("Failed to parse XML: {:?}", e)))?;
 
@@ -350,6 +402,7 @@ pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
 
     // Phase 1: regular elements — build id → ElementId lookup.
     let mut id_to_element: HashMap<String, ElementId> = HashMap::new();
+    let mut id_to_relation: HashMap<String, RelationId> = HashMap::new();
     let mut deferred_relationships: Vec<&XmlElement> = Vec::new();
 
     for elem in &all_elements {
@@ -392,21 +445,11 @@ pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
             .and_then(|s| id_to_element.get(s).copied())
             .ok_or_else(|| XmlError::Parse(format!("Unknown target element: {:?}", elem.target)))?;
 
-        model.link(source, target, kind);
+        let rel_id = model.link(source, target, kind);
+        id_to_relation.insert(elem.id.clone(), rel_id);
     }
 
-    Ok(model)
-}
-
-/// Deserialize Archi native XML into a Model, preserving original IDs.
-///
-/// This function preserves the original XML element IDs during round-trip conversion.
-/// It returns the Model along with a mapping from original XML IDs to internal ElementIds.
-pub fn xml_to_model_preserving_ids(
-    xml: &str,
-) -> Result<(Model, HashMap<String, ElementId>), XmlError> {
-    let model = xml_to_model(xml)?;
-    Ok((model, HashMap::new()))
+    Ok((model, id_to_element, id_to_relation))
 }
 
 // ===========================================================================
@@ -432,7 +475,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         // Native Archi namespace and root element.
         assert!(xml.contains("xmlns:archimate=\"http://www.archimatetool.com/archimate\""));
@@ -460,7 +503,8 @@ mod tests {
         let model = Model::new("empty");
         let positions: HashMap<ElementId, (f64, f64, f64, f64)> = HashMap::new();
 
-        let xml = model_to_xml(&model, &positions).expect("empty model should serialize");
+        let xml =
+            model_to_xml(&model, &positions, None, None).expect("empty model should serialize");
 
         assert!(xml.contains("<archimate:model"));
         assert!(xml.contains("name=\"empty\""));
@@ -495,7 +539,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         // Collect all id="..." values.
         let ids: Vec<&str> = xml
@@ -528,7 +572,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         // Exactly three diagram objects.
         let child_count = xml.matches("xsi:type=\"archimate:DiagramObject\"").count();
@@ -557,7 +601,7 @@ mod tests {
         model.add_element("Goal1", ElementKind::Goal);
 
         let positions = HashMap::new();
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         assert!(xml.contains("type=\"business\""));
         assert!(xml.contains("type=\"application\""));
@@ -575,7 +619,7 @@ mod tests {
         model.link(b, c, RelationKind::Realization);
 
         let positions = HashMap::new();
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
         let parsed = xml_to_model(&xml).unwrap();
 
         assert_eq!(parsed.name, "Round Trip");

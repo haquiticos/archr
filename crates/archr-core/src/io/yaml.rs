@@ -3,7 +3,7 @@
 //! Handles (de)serialization to/from YAML, with schema-level validation.
 use std::collections::HashMap;
 
-use crate::model::{ElementId, ElementKind, Model, RelationKind};
+use crate::model::{ElementId, ElementKind, Model, RelationId, RelationKind};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -50,6 +50,13 @@ pub enum SchemaError {
 /// Result of YAML parsing with accumulated schema errors.
 pub type ParseResult<T> = Result<T, Vec<SchemaError>>;
 
+/// Parsed Model with original string ID mappings preserved for round-trip fidelity.
+pub type YamlParseResult = ParseResult<(
+    Model,
+    HashMap<String, ElementId>,
+    HashMap<String, RelationId>,
+)>;
+
 /// Parses YAML input into an ArchiMate Model.
 ///
 /// Returns errors if:
@@ -59,6 +66,10 @@ pub type ParseResult<T> = Result<T, Vec<SchemaError>>;
 /// - Any element `id` is duplicated
 /// - Any `id` is empty or contains spaces
 pub fn parse_yaml(input: &str) -> ParseResult<Model> {
+    Ok(parse_yaml_with_ids(input)?.0)
+}
+
+pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     let yaml_model: YamlModel =
         serde_yaml::from_str(input).map_err(|_| vec![SchemaError::InvalidId])?;
 
@@ -119,20 +130,21 @@ pub fn parse_yaml(input: &str) -> ParseResult<Model> {
     }
 
     // Map original string ids to internal ElementId handles.
-    let mut str_to_elem: std::collections::HashMap<String, ElementId> =
-        std::collections::HashMap::new();
+    let mut str_to_elem: HashMap<String, ElementId> = HashMap::new();
     for (elem, id) in elements.iter().zip(elem_ids.iter()) {
         str_to_elem.insert(elem.id.clone(), *id);
     }
 
+    let mut str_to_rel: HashMap<String, RelationId> = HashMap::new();
     for rel in &relationships {
         let kind = RelationKind::from_name(&rel.kind).expect("validated above");
         let source = str_to_elem[&rel.source];
         let target = str_to_elem[&rel.target];
-        model.link(source, target, kind);
+        let rel_id = model.link(source, target, kind);
+        str_to_rel.insert(rel.id.clone(), rel_id);
     }
 
-    Ok(model)
+    Ok((model, str_to_elem, str_to_rel))
 }
 
 /// Serializes an ArchiMate Model back to YAML.
@@ -163,47 +175,49 @@ pub fn model_to_yaml(model: &Model) -> String {
 }
 
 /// Serialize an ArchiMate Model to YAML, optionally preserving original XML IDs.
+///
+/// When ID mappings are provided, original string identifiers are used instead
+/// of synthetic `e_N`/`r_N` indices, enabling faithful round-trip conversion.
 pub fn model_to_yaml_with_ids(
     model: &Model,
-    original_ids: Option<&HashMap<String, ElementId>>,
+    elem_ids: Option<&HashMap<String, ElementId>>,
+    rel_ids: Option<&HashMap<String, RelationId>>,
 ) -> String {
-    let id_map: HashMap<ElementId, String> = original_ids
-        .map(|map| map.iter().map(|(k, v)| (v.clone(), k.clone())).collect())
-        .unwrap_or_else(|| HashMap::new());
+    // Reverse maps for O(1) lookup by internal ID.
+    let elem_map: HashMap<&ElementId, &str> = elem_ids
+        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
+        .unwrap_or_default();
+    let rel_map: HashMap<&RelationId, &str> = rel_ids
+        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
+        .unwrap_or_default();
+
+    let elem_id = |id: &ElementId| -> String {
+        elem_map
+            .get(id)
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| format!("e_{}", id.0))
+    };
 
     let inner = YamlModelInner {
         name: model.name.clone(),
         elements: model
             .iter_elements()
-            .map(|elem| {
-                let id = id_map
-                    .get(&elem.id)
-                    .cloned()
-                    .unwrap_or_else(|| format!("e_{}", elem.id.0));
-                YamlElement {
-                    id,
-                    name: elem.name.clone(),
-                    kind: elem.kind.to_string(),
-                }
+            .map(|elem| YamlElement {
+                id: elem_id(&elem.id),
+                name: elem.name.clone(),
+                kind: elem.kind.to_string(),
             })
             .collect(),
         relationships: model
             .iter_relations()
-            .map(|rel| {
-                let source = id_map
-                    .get(&rel.source)
-                    .cloned()
-                    .unwrap_or_else(|| format!("e_{}", rel.source.0));
-                let target = id_map
-                    .get(&rel.target)
-                    .cloned()
-                    .unwrap_or_else(|| format!("e_{}", rel.target.0));
-                YamlRelationship {
-                    id: format!("r_{}", rel.id.0), // IDs de relações não são preservados atualmente
-                    source,
-                    target,
-                    kind: rel.kind.to_string(),
-                }
+            .map(|rel| YamlRelationship {
+                id: rel_map
+                    .get(&rel.id)
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| format!("r_{}", rel.id.0)),
+                source: elem_id(&rel.source),
+                target: elem_id(&rel.target),
+                kind: rel.kind.to_string(),
             })
             .collect(),
     };
