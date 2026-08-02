@@ -23,26 +23,27 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 ## Example YAML Schema
 
 ```yaml
-<?xml version="1.0" encoding="UTF-8"?>
-<root>
-  <element id="el-1" type="BusinessActor">
-    <name>Customer Service</name>
-  </element>
-  <element id="el-2" type="ApplicationComponent">
-    <name>CRM System</name>
-  </element>
-  <element id="el-3" type="BusinessFunction">
-    <name>Process Order</name>
-  </element>
-  <relation id="rel-1" type="Assignment">
-    <source idref="el-1"/>
-    <target idref="el-3"/>
-  </relation>
-  <relation id="rel-2" type="Realization">
-    <source idref="el-2"/>
-    <target idref="el-3"/>
-  </relation>
-</root>
+model:
+  name: My Architecture
+  elements:
+    - id: actor_001
+      name: Customer Service
+      kind: BusinessActor
+    - id: app_001
+      name: CRM System
+      kind: ApplicationComponent
+    - id: fn_001
+      name: Process Order
+      kind: BusinessFunction
+  relationships:
+    - id: rel_001
+      source: actor_001
+      target: fn_001
+      kind: Assignment
+    - id: rel_002
+      source: app_001
+      target: fn_001
+      kind: Realization
 ```
 
 ## Relationship Rules (ArchiMate 3.2)
@@ -51,13 +52,13 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 
 ### Layers (8)
 1. **Motivation** - Goals, requirements, drivers
-2. **Strategy** - Roadmaps, principles, KPIs
+2. **Strategy** - Capabilities, resources, value streams
 3. **Business** - Business processes, functions, actors
 4. **Application** - Application components, interfaces
 5. **Technology** - Infrastructure, runtime, network
-6. **Physical** - Hardware, locations, facilities
+6. **Physical** - Equipment, facilities, materials
 7. **Implementation** - Projects, deliverables, migration
-8. **Other** - Concepts, principles
+8. **Other** - Grouping, location, junctions
 
 ### Relationship Types (11)
 - **Structural** (4): Composition, Aggregation, Assignment, Realization
@@ -65,29 +66,24 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 - **Dynamic** (2): Triggering, Flow
 - **Other** (1): Specialization
 
-### Key Constraints (From Implementation)
+### Derivability Rules (from `validate.rs::ALLOWED`)
 
-| Layer Pair | Allowed Relations |
-|------------|-------------------|
-| Same Layer | All 11 types (except limitations apply per type) |
-| Same Layer → Same Layer | All 11 types with restrictions |
-| Same Layer → Different Layer | Limited by relationship type |
+| Relationship | Allowed source → target |
+|-------------|------------------------|
+| Composition | Same layer only |
+| Aggregation | Same layer only |
+| Assignment | Same layer only |
+| Realization | Same layer; upward crossing: Implementation→{Strategy,Business,App,Tech,Physical}, Technology→{Application,Business}, Application→Business |
+| Serving | Descending chain: Physical→Technology, Technology→{Application,Business}, Application→{Business,Strategy}, Business→Strategy |
+| Access | Bidirectional: Application↔Technology, Application↔Business, Application↔Application |
+| Influence | Any layer → any layer |
+| Association | Any layer → any layer |
+| Triggering | Same layer only |
+| Flow | Same layer only |
+| Specialization | Same layer only |
 
-### Detailed Rules
+For the full `ALLOWED` matrix (203 triples), see [docs/SPEC.md](../docs/SPEC.md).
 
-See [docs/SPEC.md](../docs/SPEC.md) for complete derivability rules:
-
-- **Composition**: Any layer → Any layer (composite element source)
-- **Aggregation**: Same layer only
-- **Assignment**: BusinessActor → BusinessFunction only
-- **Realization**: ApplicationComponent → BusinessFunction, BusinessProcess
-- **Serving**: BusinessService → BusinessFunction
-- **Access**: ApplicationComponent → DataObject
-- **Influence**: Motivation → Same layer only
-- **Association**: Any layer → Any layer
-- **Triggering**: Same layer only
-- **Flow**: Same layer only
-- **Specialization**: Any layer → Any layer
 ## Exit Codes
 
 | Code | Meaning |

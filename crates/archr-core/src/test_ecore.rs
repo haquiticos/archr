@@ -6,53 +6,6 @@
 use crate::model::{ElementKind, ElementLayer, ElementLayer::*};
 use std::collections::HashSet;
 
-/// Returns the canonical layer for each ElementKind based on our implementation.
-/// This should be kept in sync with ElementKind::layer().
-fn element_layer_from_kind(kind: ElementKind) -> ElementLayer {
-    use ElementKind::*;
-    match kind {
-        // Motivation (10)
-        Stakeholder | Driver | Assessment | Goal | Outcome
-        | Principle | Requirement | Constraint | Meaning | Value
-            => Motivation,
-
-        // Strategy (4)
-        Resource | Capability | ValueStream | CourseOfAction
-            => Strategy,
-
-        // Business (13)
-        BusinessActor | BusinessRole | BusinessCollaboration | BusinessInterface
-        | BusinessProcess | BusinessFunction | BusinessInteraction | BusinessEvent
-        | BusinessService | BusinessObject | Contract | Representation | Product
-            => Business,
-
-        // Application (9)
-        ApplicationComponent | ApplicationCollaboration | ApplicationInterface
-        | ApplicationFunction | ApplicationProcess | ApplicationInteraction
-        | ApplicationEvent | ApplicationService | DataObject
-            => Application,
-
-        // Technology (13)
-        Node | Device | SystemSoftware | TechnologyCollaboration
-        | TechnologyInterface | Path | CommunicationNetwork | Artifact
-        | TechnologyFunction | TechnologyProcess | TechnologyInteraction
-        | TechnologyEvent | TechnologyService
-            => Technology,
-
-        // Physical (4)
-        Equipment | Facility | Material | DistributionNetwork
-            => Physical,
-
-        // Implementation & Migration (4)
-        WorkPackage | Deliverable | Plateau | Gap
-            => Implementation,
-
-        // Other (4)
-        Grouping | Location | AndJunction | OrJunction
-            => Other,
-    }
-}
-
 /// Collects all elements in our implementation and verifies the count matches expectations.
 #[test]
 fn test_element_kind_count() {
@@ -130,8 +83,7 @@ fn test_element_kind_count() {
 
     // Verify each element has a layer
     for kind in &elements {
-        let kind_parsed = ElementKind::from_name(kind.type_name()).unwrap();
-        let layer = element_layer_from_kind(kind_parsed);
+        let layer = kind.layer();
         assert!(matches!(layer, Motivation | Strategy | Business | Application | Technology | Physical | Implementation | Other),
             "ElementKind::{} should have a defined layer: {:?}",
             kind.type_name(), layer);
@@ -169,7 +121,7 @@ fn test_element_layers_are_defined() {
     ];
 
     for kind in kinds {
-        let layer = element_layer_from_kind(kind);
+        let layer = kind.layer();
         assert!(layers.contains(&layer),
             "ElementKind::{} should have a valid layer: {:?}",
             kind.type_name(), layer);
@@ -239,10 +191,12 @@ fn test_relation_kind_count() {
     }
 }
 
-/// Verifies that ElementKind::type_name() returns canonical names matching ecore.
+/// Verifies that ElementKind::type_name() round-trips through from_name() —
+/// i.e. for every canonical name N: from_name(N).type_name() == N.
+/// This catches mismatches between the two lookup tables.
 #[test]
 fn test_element_kind_type_names() {
-    let expected = vec![
+    let canonical = [
         "Stakeholder", "Driver", "Assessment", "Goal", "Outcome",
         "Principle", "Requirement", "Constraint", "Meaning", "Value",
         "Resource", "Capability", "ValueStream", "CourseOfAction",
@@ -260,33 +214,18 @@ fn test_element_kind_type_names() {
         "TechnologyEvent", "TechnologyService",
         "Equipment", "Facility", "Material", "DistributionNetwork",
         "WorkPackage", "Deliverable", "Plateau", "Gap",
-        "Grouping", "Location", "AndJunction", "OrJunction"
+        "Grouping", "Location", "AndJunction", "OrJunction",
     ];
 
-    let actual: Vec<_> = vec![
-        "Stakeholder", "Driver", "Assessment", "Goal", "Outcome",
-        "Principle", "Requirement", "Constraint", "Meaning", "Value",
-        "Resource", "Capability", "ValueStream", "CourseOfAction",
-        "BusinessActor", "BusinessRole", "BusinessCollaboration",
-        "BusinessInterface", "BusinessProcess", "BusinessFunction",
-        "BusinessInteraction", "BusinessEvent", "BusinessService",
-        "BusinessObject", "Contract", "Representation", "Product",
-        "ApplicationComponent", "ApplicationCollaboration",
-        "ApplicationInterface", "ApplicationFunction",
-        "ApplicationProcess", "ApplicationInteraction", "ApplicationEvent",
-        "ApplicationService", "DataObject",
-        "Node", "Device", "SystemSoftware", "TechnologyCollaboration",
-        "TechnologyInterface", "Path", "CommunicationNetwork", "Artifact",
-        "TechnologyFunction", "TechnologyProcess", "TechnologyInteraction",
-        "TechnologyEvent", "TechnologyService",
-        "Equipment", "Facility", "Material", "DistributionNetwork",
-        "WorkPackage", "Deliverable", "Plateau", "Gap",
-        "Grouping", "Location", "AndJunction", "OrJunction"
-    ].iter()
-        .map(|name| ElementKind::from_name(name).unwrap())
-        .map(|k| k.type_name())
-        .collect();
+    assert_eq!(canonical.len(), 61, "Should list exactly 61 element types");
 
-    assert_eq!(actual, expected,
-        "ElementKind::type_name() should match canonical names");
+    for name in canonical {
+        let kind = ElementKind::from_name(name).unwrap_or_else(|| {
+            panic!("from_name({}) returned None", name)
+        });
+        assert_eq!(
+            kind.type_name(), name,
+            "type_name/from_name round-trip failed for {}", name,
+        );
+    }
 }

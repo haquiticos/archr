@@ -1,33 +1,25 @@
 # ArchiMate Rules
 
-**Auto-generated from archr implementation**  
-**Last generated:** 2026-08-02  
-**Source:** [docs/SPEC.md](../docs/SPEC.md)
-
-This file redirects to the authoritative specification generated from the archr Rust code.
+**This file is a redirect.** The authoritative spec is auto-generated from
+archr's Rust source code at **[docs/SPEC.md](../docs/SPEC.md)**.
 
 ## Quick Reference
 
 - **Layers:** 8 (Motivation, Strategy, Business, Application, Technology, Physical, Implementation, Other)
-- **Elements:** 61 (excluding Junction)
+- **Elements:** 61
 - **Relationships:** 11 (Composition, Aggregation, Assignment, Realization, Serving, Access, Influence, Association, Triggering, Flow, Specialization)
+- **Derivability matrix:** 203 `(source_layer, relation_kind, target_layer)` triples in `validate.rs::ALLOWED`
 
 ## For Implementation Details
 
-See the complete auto-generated specification at:
-- [docs/SPEC.md](../docs/SPEC.md) — Full specification
+- [docs/SPEC.md](../docs/SPEC.md) — Full specification (single source of truth)
 - [crates/archr-core/src/validate.rs](../crates/archr-core/src/validate.rs) — Rule implementation
+- [crates/archr-core/src/model.rs](../crates/archr-core/src/model.rs) — Element and relationship definitions
 
 ## Regenerating
-
-To regenerate this spec from the Rust code:
 
 ```bash
 python3 gen_spec.py
 ```
 
-Or using Rust:
-
-```bash
-cargo run -- gen_spec
-```
+CI rejects a PR if `docs/SPEC.md` is stale relative to the code.
