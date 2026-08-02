@@ -23,39 +23,42 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 ## Example YAML Schema
 
 ```yaml
-<?xml version="1.0" encoding="UTF-8"?>
-<root>
-  <element id="el-1" type="BusinessActor">
-    <name>Customer Service</name>
-  </element>
-  <element id="el-2" type="ApplicationComponent">
-    <name>CRM System</name>
-  </element>
-  <element id="el-3" type="BusinessFunction">
-    <name>Process Order</name>
-  </element>
-  <relation id="rel-1" type="Assignment">
-    <source idref="el-1"/>
-    <target idref="el-3"/>
-  </relation>
-  <relation id="rel-2" type="Realization">
-    <source idref="el-2"/>
-    <target idref="el-3"/>
-  </relation>
-</root>
+model:
+  name: My Architecture
+  elements:
+    - id: actor_001
+      name: Customer Service
+      kind: BusinessActor
+    - id: app_001
+      name: CRM System
+      kind: ApplicationComponent
+    - id: fn_001
+      name: Process Order
+      kind: BusinessFunction
+  relationships:
+    - id: rel_001
+      source: actor_001
+      target: fn_001
+      kind: Assignment
+    - id: rel_002
+      source: app_001
+      target: fn_001
+      kind: Realization
 ```
 
 ## Relationship Rules (ArchiMate 3.2)
 
+**Note**: These rules are derived from the implementation. See [docs/SPEC.md](../docs/SPEC.md) for authoritative documentation.
+
 ### Layers (8)
 1. **Motivation** - Goals, requirements, drivers
-2. **Strategy** - Roadmaps, principles, KPIs
+2. **Strategy** - Capabilities, resources, value streams
 3. **Business** - Business processes, functions, actors
 4. **Application** - Application components, interfaces
 5. **Technology** - Infrastructure, runtime, network
-6. **Physical** - Hardware, locations, facilities
+6. **Physical** - Equipment, facilities, materials
 7. **Implementation** - Projects, deliverables, migration
-8. **Other** - Concepts, principles
+8. **Other** - Grouping, location, junctions
 
 ### Relationship Types (11)
 - **Structural** (4): Composition, Aggregation, Assignment, Realization
@@ -63,16 +66,23 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 - **Dynamic** (2): Triggering, Flow
 - **Other** (1): Specialization
 
-### Key Constraints
-| Layer Pair | Allowed Relations |
-|------------|-------------------|
-| Same Layer | Composition, Aggregation, Assignment, Realization |
-| Motivation → Core (Business/App/Technology) | Only Association |
-| Core → Same Layer (Business/App/Technology) | All 11 types |
-| Serving | Serves Core (downward) |
-| Access | Accesses Infrastructure (downward) |
-| Influence | Motivation/Core only (downward) |
-| Association | Any layer pair |
+### Derivability Rules (from `validate.rs::ALLOWED`)
+
+| Relationship | Allowed source → target |
+|-------------|------------------------|
+| Composition | Same layer only |
+| Aggregation | Same layer only |
+| Assignment | Same layer only |
+| Realization | Same layer; upward crossing: Implementation→{Strategy,Business,App,Tech,Physical}, Technology→{Application,Business}, Application→Business |
+| Serving | Descending chain: Physical→Technology, Technology→{Application,Business}, Application→{Business,Strategy}, Business→Strategy |
+| Access | Bidirectional: Application↔Technology, Application↔Business, Application↔Application |
+| Influence | Any layer → any layer |
+| Association | Any layer → any layer |
+| Triggering | Same layer only |
+| Flow | Same layer only |
+| Specialization | Same layer only |
+
+For the full `ALLOWED` matrix (203 triples), see [docs/SPEC.md](../docs/SPEC.md).
 
 ## Exit Codes
 
@@ -84,3 +94,10 @@ Validate, generate, and manipulate ArchiMate 3.2 architecture models via the `ar
 | 3 | Binary version incompatible (requires ≥1.0.0) |
 | 4 | Subprocess timeout |
 | 64 | Invalid arguments |
+
+## References
+
+- **[docs/SPEC.md](../docs/SPEC.md)** — Authoritative, auto-generated spec
+- **[validate.rs](../../crates/archr-core/src/validate.rs)** — Implementation details
+- **[model.rs](../../crates/archr-core/src/model.rs)** — Element definitions
+- **[archimate.ecore](./references/archimate.ecore)** — Archi metamodel (MIT license)

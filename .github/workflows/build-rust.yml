@@ -31,6 +31,17 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all --check
 
+      - name: Regenerate SPEC.md from code
+        run: python3 gen_spec.py
+
+      - name: Verify SPEC.md is up to date
+        run: |
+          if [ -n "$(git diff docs/SPEC.md)" ]; then
+            echo "❌ docs/SPEC.md is out of date! Run 'python3 gen_spec.py' to regenerate."
+            git diff --stat docs/SPEC.md
+            exit 1
+          fi
+
       - name: Run clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Build release binary
