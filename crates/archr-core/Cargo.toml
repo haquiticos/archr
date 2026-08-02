@@ -3,11 +3,22 @@ name = "archr-core"
 version = "1.0.0"
 edition = "2021"
 description = "Headless ArchiMate 3.2 engine — validate, manipulate, and export models via CLI"
-
+license = "MIT"
+repository = "https://github.com/haquiticos/archr"
+homepage = "https://github.com/haquiticos/archr"
+keywords = ["archimate", "architecture", "cli", "validation", "modeling"]
+categories = ["command-line-utilities", "development-tools"]
+rust-version = "1.74"
+exclude = [
+    "tests/",
+    "docs/",
+    "skill/",
+]
 
 [[bin]]
 name = "archr"
 path = "src/main.rs"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"

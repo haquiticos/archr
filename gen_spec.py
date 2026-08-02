@@ -143,7 +143,7 @@ def extract_allowed() -> Dict[str, Set[Tuple[str, str]]]:
     end = src.index("\n];", start)
     block = src[start:end]
     pat = re.compile(
-        r"\(ElementLayer::(\w+),\s*RelationKind::(\w+),\s*ElementLayer::(\w+)\)"
+        r"\(\s*ElementLayer::(\w+),\s*RelationKind::(\w+),\s*ElementLayer::(\w+)\s*,?\s*\)"
     )
     by_rel: Dict[str, Set[Tuple[str, str]]] = defaultdict(set)
     found = False

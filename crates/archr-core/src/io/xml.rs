@@ -6,9 +6,7 @@
 //! relationships live in the `Relations` folder as `<element xsi:type="archimate:*Relationship">`,
 //! and the diagram view uses `<child>`/`<sourceConnection>` nesting.
 
-use crate::model::{
-    ElementId, ElementKind, ElementLayer, Model, RelationId, RelationKind,
-};
+use crate::model::{ElementId, ElementKind, ElementLayer, Model, RelationId, RelationKind};
 use std::collections::HashMap;
 use std::fmt::Write as _;
 use thiserror::Error;
@@ -23,6 +21,16 @@ pub enum XmlError {
     Parse(String),
 }
 
+/// Parsed Model with original XML ID mappings preserved for round-trip fidelity.
+pub type XmlParseResult = Result<
+    (
+        Model,
+        HashMap<String, ElementId>,
+        HashMap<String, RelationId>,
+    ),
+    XmlError,
+>;
+
 // ===========================================================================
 // Serialization — Model → Archi native XML
 // ===========================================================================
@@ -30,20 +38,48 @@ pub enum XmlError {
 /// Serialize a Model to Archi native XML.
 ///
 /// `positions` maps element id to `(x, y, width, height)` for the diagram view.
+/// When `elem_id_map`/`rel_id_map` are provided, original string IDs are used
+/// instead of fresh UUIDs, preserving identifiers across round-trip conversion.
 pub fn model_to_xml(
     model: &Model,
     positions: &HashMap<ElementId, (f64, f64, f64, f64)>,
+    elem_id_map: Option<&HashMap<String, ElementId>>,
+    rel_id_map: Option<&HashMap<String, RelationId>>,
 ) -> Result<String, XmlError> {
     let model_id = Uuid::new_v4();
+
+    // Reverse maps for lookup by internal ID; fall back to UUIDs when no mapping.
+    let elem_rev: HashMap<&ElementId, &str> = elem_id_map
+        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
+        .unwrap_or_default();
+    let rel_rev: HashMap<&RelationId, &str> = rel_id_map
+        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
+        .unwrap_or_default();
 
     // Stable string IDs for cross-referencing (elements, relationships, diagram objects).
     let elem_ids: HashMap<ElementId, String> = model
         .iter_elements()
-        .map(|e| (e.id, Uuid::new_v4().to_string()))
+        .map(|e| {
+            (
+                e.id,
+                elem_rev
+                    .get(&e.id)
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
+            )
+        })
         .collect();
     let rel_ids: HashMap<RelationId, String> = model
         .iter_relations()
-        .map(|r| (r.id, Uuid::new_v4().to_string()))
+        .map(|r| {
+            (
+                r.id,
+                rel_rev
+                    .get(&r.id)
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
+            )
+        })
         .collect();
     let child_ids: HashMap<ElementId, String> = model
         .iter_elements()
@@ -51,7 +87,10 @@ pub fn model_to_xml(
         .collect();
 
     let mut xml = String::new();
-    let _ = writeln!(xml, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>");
+    let _ = writeln!(
+        xml,
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+    );
     let _ = write!(
         xml,
         "<archimate:model \
@@ -98,17 +137,17 @@ pub fn model_to_xml(
 }
 
 /// Emit one `<folder>` per non-empty metamodel layer, in canonical Archi order.
-fn emit_element_folders(
-    xml: &mut String,
-    model: &Model,
-    elem_ids: &HashMap<ElementId, String>,
-) {
+fn emit_element_folders(xml: &mut String, model: &Model, elem_ids: &HashMap<ElementId, String>) {
     // Canonical folder order. Technology and Physical share a single folder.
     let canonical: &[(ElementLayer, &str, &str)] = &[
         (ElementLayer::Strategy, "Strategy", "strategy"),
         (ElementLayer::Business, "Business", "business"),
         (ElementLayer::Application, "Application", "application"),
-        (ElementLayer::Technology, "Technology &amp; Physical", "technology"),
+        (
+            ElementLayer::Technology,
+            "Technology &amp; Physical",
+            "technology",
+        ),
         (ElementLayer::Motivation, "Motivation", "motivation"),
         (
             ElementLayer::Implementation,
@@ -182,13 +221,25 @@ fn emit_diagram(
     // Sort elements by position (Y then X) for proper visual layering.
     let mut sorted: Vec<_> = model.iter_elements().collect();
     sorted.sort_by(|a, b| {
-        let (_, ya, _, _) = positions.get(&a.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
-        let (_, yb, _, _) = positions.get(&b.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+        let (_, ya, _, _) = positions
+            .get(&a.id)
+            .copied()
+            .unwrap_or((0.0, 0.0, 0.0, 0.0));
+        let (_, yb, _, _) = positions
+            .get(&b.id)
+            .copied()
+            .unwrap_or((0.0, 0.0, 0.0, 0.0));
         ya.partial_cmp(&yb)
             .unwrap_or(std::cmp::Ordering::Equal)
             .then_with(|| {
-                let (xa, _, _, _) = positions.get(&a.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
-                let (xb, _, _, _) = positions.get(&b.id).copied().unwrap_or((0.0, 0.0, 0.0, 0.0));
+                let (xa, _, _, _) = positions
+                    .get(&a.id)
+                    .copied()
+                    .unwrap_or((0.0, 0.0, 0.0, 0.0));
+                let (xb, _, _, _) = positions
+                    .get(&b.id)
+                    .copied()
+                    .unwrap_or((0.0, 0.0, 0.0, 0.0));
                 xa.partial_cmp(&xb).unwrap_or(std::cmp::Ordering::Equal)
             })
     });
@@ -204,8 +255,7 @@ fn emit_diagram(
             xml,
             "      <child xsi:type=\"archimate:DiagramObject\" id=\"{}\" \
              archimateElement=\"{}\">",
-            child_id,
-            elem_ids[&elem.id],
+            child_id, elem_ids[&elem.id],
         );
         let _ = writeln!(
             xml,
@@ -248,7 +298,9 @@ fn folder_for_layer(layer: ElementLayer) -> (&'static str, &'static str) {
             ("Technology &amp; Physical", "technology")
         }
         ElementLayer::Motivation => ("Motivation", "motivation"),
-        ElementLayer::Implementation => ("Implementation &amp; Migration", "implementation_migration"),
+        ElementLayer::Implementation => {
+            ("Implementation &amp; Migration", "implementation_migration")
+        }
         ElementLayer::Other => ("Other", "other"),
     }
 }
@@ -323,6 +375,20 @@ fn strip_archimate_prefix(s: &str) -> &str {
 
 /// Deserialize Archi native XML into a Model.
 pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
+    Ok(parse_xml(xml)?.0)
+}
+
+/// Deserialize Archi native XML into a Model, preserving original XML IDs.
+///
+/// Returns the Model along with mappings from original XML identifiers to
+/// internal ElementIds and RelationIds, enabling faithful round-trip conversion.
+pub fn xml_to_model_preserving_ids(xml: &str) -> XmlParseResult {
+    let (model, elem_ids, rel_ids) = parse_xml(xml)?;
+    Ok((model, elem_ids, rel_ids))
+}
+
+/// Core XML parser: returns Model plus original-ID mappings.
+fn parse_xml(xml: &str) -> XmlParseResult {
     let xml_model: XmlModel = quick_xml::de::from_str(xml)
         .map_err(|e| XmlError::Parse(format!("Failed to parse XML: {:?}", e)))?;
 
@@ -336,6 +402,7 @@ pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
 
     // Phase 1: regular elements — build id → ElementId lookup.
     let mut id_to_element: HashMap<String, ElementId> = HashMap::new();
+    let mut id_to_relation: HashMap<String, RelationId> = HashMap::new();
     let mut deferred_relationships: Vec<&XmlElement> = Vec::new();
 
     for elem in &all_elements {
@@ -363,9 +430,8 @@ pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
             .strip_suffix("Relationship")
             .unwrap_or(type_local);
 
-        let kind = RelationKind::from_name(kind_str).ok_or_else(|| {
-            XmlError::Parse(format!("Unknown relation kind: {}", kind_str))
-        })?;
+        let kind = RelationKind::from_name(kind_str)
+            .ok_or_else(|| XmlError::Parse(format!("Unknown relation kind: {}", kind_str)))?;
 
         let source = elem
             .source
@@ -379,10 +445,11 @@ pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
             .and_then(|s| id_to_element.get(s).copied())
             .ok_or_else(|| XmlError::Parse(format!("Unknown target element: {:?}", elem.target)))?;
 
-        model.link(source, target, kind);
+        let rel_id = model.link(source, target, kind);
+        id_to_relation.insert(elem.id.clone(), rel_id);
     }
 
-    Ok(model)
+    Ok((model, id_to_element, id_to_relation))
 }
 
 // ===========================================================================
@@ -408,7 +475,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         // Native Archi namespace and root element.
         assert!(xml.contains("xmlns:archimate=\"http://www.archimatetool.com/archimate\""));
@@ -436,7 +503,8 @@ mod tests {
         let model = Model::new("empty");
         let positions: HashMap<ElementId, (f64, f64, f64, f64)> = HashMap::new();
 
-        let xml = model_to_xml(&model, &positions).expect("empty model should serialize");
+        let xml =
+            model_to_xml(&model, &positions, None, None).expect("empty model should serialize");
 
         assert!(xml.contains("<archimate:model"));
         assert!(xml.contains("name=\"empty\""));
@@ -471,7 +539,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         // Collect all id="..." values.
         let ids: Vec<&str> = xml
@@ -504,7 +572,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         // Exactly three diagram objects.
         let child_count = xml.matches("xsi:type=\"archimate:DiagramObject\"").count();
@@ -533,7 +601,7 @@ mod tests {
         model.add_element("Goal1", ElementKind::Goal);
 
         let positions = HashMap::new();
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
 
         assert!(xml.contains("type=\"business\""));
         assert!(xml.contains("type=\"application\""));
@@ -551,7 +619,7 @@ mod tests {
         model.link(b, c, RelationKind::Realization);
 
         let positions = HashMap::new();
-        let xml = model_to_xml(&model, &positions).unwrap();
+        let xml = model_to_xml(&model, &positions, None, None).unwrap();
         let parsed = xml_to_model(&xml).unwrap();
 
         assert_eq!(parsed.name, "Round Trip");
@@ -571,8 +639,7 @@ mod tests {
         assert_eq!(parsed_kinds.get("Goal"), Some(&ElementKind::Goal));
 
         // Relationships preserved by kind.
-        let rel_kinds: Vec<RelationKind> =
-            parsed.iter_relations().map(|r| r.kind).collect();
+        let rel_kinds: Vec<RelationKind> = parsed.iter_relations().map(|r| r.kind).collect();
         assert!(rel_kinds.contains(&RelationKind::Serving));
         assert!(rel_kinds.contains(&RelationKind::Realization));
     }

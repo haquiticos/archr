@@ -1,8 +1,8 @@
 //! Automatic grid layout by topological layer.
 
-use crate::model::{ElementId, Model, RelationKind};
-use petgraph::graph::{DiGraph, NodeIndex, UnGraph};
+use crate::model::{ElementId, Model};
 use petgraph::algo;
+use petgraph::graph::{DiGraph, NodeIndex, UnGraph};
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 
@@ -141,9 +141,7 @@ impl LayoutResolver {
                         // Find parents (incoming edges) and get their depth + 1
                         let parent_depth = directed
                             .neighbors_directed(node, petgraph::Incoming)
-                            .filter_map(|neighbor| {
-                                depth.get(&directed[neighbor])
-                            })
+                            .filter_map(|neighbor| depth.get(&directed[neighbor]))
                             .map(|&d| d + 1)
                             .max()
                             .unwrap_or(0);
@@ -167,11 +165,9 @@ impl LayoutResolver {
                         let elem_id = directed[node];
 
                         // Find parents (incoming edges)
-                        let mut parent_depths: Vec<usize> = directed
+                        let parent_depths: Vec<usize> = directed
                             .neighbors_directed(node, petgraph::Incoming)
-                            .filter_map(|neighbor| {
-                                depths.get(&directed[neighbor])
-                            })
+                            .filter_map(|neighbor| depths.get(&directed[neighbor]))
                             .copied()
                             .collect();
 
@@ -324,13 +320,12 @@ mod tests {
             .filter(|(_, x, _, _)| *x < COMPONENT_OFFSET / 2.0)
             .map(|(x, _, _, _)| *x)
             .fold(f64::INFINITY, f64::min);
-            
+
         let min_x_comp2 = positions
             .values()
             .filter(|(_, x, _, _)| *x >= COMPONENT_OFFSET / 2.0)
             .map(|(x, _, _, _)| *x)
             .fold(f64::INFINITY, f64::min);
-            
 
         // Check X offsets differ by at least COMPONENT_OFFSET
         assert!(min_x_comp2 - min_x_comp1 >= COMPONENT_OFFSET - 1e-6);

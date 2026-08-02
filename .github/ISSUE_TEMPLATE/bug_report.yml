@@ -1,0 +1,84 @@
+name: Bug report
+description: Report a bug or unexpected behavior in archr
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the fields below.
+        Before submitting, search [existing issues](https://github.com/haquiticos/archr/issues) to avoid duplicates.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Exact commands and input files that trigger the bug.
+      placeholder: |
+        1. Create model.yaml with: ...
+        2. Run: archr validate --input model.yaml
+        3. See error: ...
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened (error message, exit code, panic, etc.).
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: archr version
+      description: Output of `archr --version`
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Ubuntu 22.04, macOS 14, Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output / stack trace
+      description: Paste stderr output, stack traces, or attach the YAML/XML input that reproduces the issue.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context — workarounds tried, related issues, etc.
+    validations:
+      required: false
