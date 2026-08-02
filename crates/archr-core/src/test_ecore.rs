@@ -3,7 +3,7 @@
 //! The metamodel is defined in `archimate.ecore` (MIT license) and represents the
 //! authoritative definition of ArchiMate 3.2 element types and their inheritance hierarchy.
 
-use crate::model::{ElementKind, ElementLayer, ElementLayer::*};
+use crate::model::{ElementKind, ElementLayer::*};
 use std::collections::HashSet;
 
 /// Collects all elements in our implementation and verifies the count matches expectations.
@@ -14,7 +14,7 @@ fn test_element_kind_count() {
     assert_eq!(count, 61, "ElementKind should have 61 variants");
 
     // Verify each variant has a layer assigned
-    let mut elements: Vec<_> = vec![
+    let elements: Vec<_> = vec![
         ElementKind::Stakeholder,
         ElementKind::Driver,
         ElementKind::Assessment,
