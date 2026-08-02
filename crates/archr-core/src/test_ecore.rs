@@ -75,7 +75,7 @@ fn test_element_kind_count() {
         ElementKind::Grouping,
         ElementKind::Location,
         ElementKind::AndJunction,
-        ElementKind::OrJunction
+        ElementKind::OrJunction,
     ];
 
     // Verify we have the correct number of elements
@@ -84,9 +84,22 @@ fn test_element_kind_count() {
     // Verify each element has a layer
     for kind in &elements {
         let layer = kind.layer();
-        assert!(matches!(layer, Motivation | Strategy | Business | Application | Technology | Physical | Implementation | Other),
+        assert!(
+            matches!(
+                layer,
+                Motivation
+                    | Strategy
+                    | Business
+                    | Application
+                    | Technology
+                    | Physical
+                    | Implementation
+                    | Other
+            ),
             "ElementKind::{} should have a defined layer: {:?}",
-            kind.type_name(), layer);
+            kind.type_name(),
+            layer
+        );
     }
 }
 
@@ -95,36 +108,90 @@ fn test_element_kind_count() {
 #[test]
 fn test_element_layers_are_defined() {
     let layers: HashSet<_> = vec![
-        Motivation, Strategy, Business, Application, Technology,
-        Physical, Implementation, Other
-    ].into_iter().collect();
+        Motivation,
+        Strategy,
+        Business,
+        Application,
+        Technology,
+        Physical,
+        Implementation,
+        Other,
+    ]
+    .into_iter()
+    .collect();
 
     let kinds = vec![
-        ElementKind::Stakeholder, ElementKind::Driver, ElementKind::Assessment, ElementKind::Goal,
-        ElementKind::Outcome, ElementKind::Principle, ElementKind::Requirement, ElementKind::Constraint,
-        ElementKind::Meaning, ElementKind::Value,
-        ElementKind::Resource, ElementKind::Capability, ElementKind::ValueStream, ElementKind::CourseOfAction,
-        ElementKind::BusinessActor, ElementKind::BusinessRole, ElementKind::BusinessCollaboration,
-        ElementKind::BusinessInterface, ElementKind::BusinessProcess, ElementKind::BusinessFunction,
-        ElementKind::BusinessInteraction, ElementKind::BusinessEvent, ElementKind::BusinessService,
-        ElementKind::BusinessObject, ElementKind::Contract, ElementKind::Representation, ElementKind::Product,
-        ElementKind::ApplicationComponent, ElementKind::ApplicationCollaboration, ElementKind::ApplicationInterface,
-        ElementKind::ApplicationFunction, ElementKind::ApplicationProcess, ElementKind::ApplicationInteraction,
-        ElementKind::ApplicationEvent, ElementKind::ApplicationService, ElementKind::DataObject,
-        ElementKind::Node, ElementKind::Device, ElementKind::SystemSoftware, ElementKind::TechnologyCollaboration,
-        ElementKind::TechnologyInterface, ElementKind::Path, ElementKind::CommunicationNetwork, ElementKind::Artifact,
-        ElementKind::TechnologyFunction, ElementKind::TechnologyProcess, ElementKind::TechnologyInteraction,
-        ElementKind::TechnologyEvent, ElementKind::TechnologyService,
-        ElementKind::Equipment, ElementKind::Facility, ElementKind::Material, ElementKind::DistributionNetwork,
-        ElementKind::WorkPackage, ElementKind::Deliverable, ElementKind::Plateau, ElementKind::Gap,
-        ElementKind::Grouping, ElementKind::Location, ElementKind::AndJunction, ElementKind::OrJunction
+        ElementKind::Stakeholder,
+        ElementKind::Driver,
+        ElementKind::Assessment,
+        ElementKind::Goal,
+        ElementKind::Outcome,
+        ElementKind::Principle,
+        ElementKind::Requirement,
+        ElementKind::Constraint,
+        ElementKind::Meaning,
+        ElementKind::Value,
+        ElementKind::Resource,
+        ElementKind::Capability,
+        ElementKind::ValueStream,
+        ElementKind::CourseOfAction,
+        ElementKind::BusinessActor,
+        ElementKind::BusinessRole,
+        ElementKind::BusinessCollaboration,
+        ElementKind::BusinessInterface,
+        ElementKind::BusinessProcess,
+        ElementKind::BusinessFunction,
+        ElementKind::BusinessInteraction,
+        ElementKind::BusinessEvent,
+        ElementKind::BusinessService,
+        ElementKind::BusinessObject,
+        ElementKind::Contract,
+        ElementKind::Representation,
+        ElementKind::Product,
+        ElementKind::ApplicationComponent,
+        ElementKind::ApplicationCollaboration,
+        ElementKind::ApplicationInterface,
+        ElementKind::ApplicationFunction,
+        ElementKind::ApplicationProcess,
+        ElementKind::ApplicationInteraction,
+        ElementKind::ApplicationEvent,
+        ElementKind::ApplicationService,
+        ElementKind::DataObject,
+        ElementKind::Node,
+        ElementKind::Device,
+        ElementKind::SystemSoftware,
+        ElementKind::TechnologyCollaboration,
+        ElementKind::TechnologyInterface,
+        ElementKind::Path,
+        ElementKind::CommunicationNetwork,
+        ElementKind::Artifact,
+        ElementKind::TechnologyFunction,
+        ElementKind::TechnologyProcess,
+        ElementKind::TechnologyInteraction,
+        ElementKind::TechnologyEvent,
+        ElementKind::TechnologyService,
+        ElementKind::Equipment,
+        ElementKind::Facility,
+        ElementKind::Material,
+        ElementKind::DistributionNetwork,
+        ElementKind::WorkPackage,
+        ElementKind::Deliverable,
+        ElementKind::Plateau,
+        ElementKind::Gap,
+        ElementKind::Grouping,
+        ElementKind::Location,
+        ElementKind::AndJunction,
+        ElementKind::OrJunction,
     ];
 
     for kind in kinds {
         let layer = kind.layer();
-        assert!(layers.contains(&layer),
+        assert!(
+            layers.contains(&layer),
             "ElementKind::{} should have a valid layer: {:?}",
-            kind.type_name(), layer);
+            kind.type_name(),
+            layer
+        );
     }
 }
 
@@ -166,9 +233,11 @@ fn test_element_kind_layer_method() {
     for (type_name, expected_layer) in test_cases {
         let kind = ElementKind::from_name(type_name).unwrap();
         let layer = kind.layer();
-        assert_eq!(layer, expected_layer,
+        assert_eq!(
+            layer, expected_layer,
             "ElementKind::{} should have layer: {:?}, not {:?}",
-            type_name, expected_layer, layer);
+            type_name, expected_layer, layer
+        );
     }
 }
 
@@ -177,9 +246,17 @@ fn test_element_kind_layer_method() {
 fn test_relation_kind_count() {
     use crate::model::RelationKind::*;
     let variants: Vec<_> = vec![
-        Composition, Aggregation, Assignment, Realization,
-        Serving, Access, Influence, Association,
-        Triggering, Flow, Specialization
+        Composition,
+        Aggregation,
+        Assignment,
+        Realization,
+        Serving,
+        Access,
+        Influence,
+        Association,
+        Triggering,
+        Flow,
+        Specialization,
     ];
 
     assert_eq!(variants.len(), 11, "RelationKind should have 11 variants");
@@ -187,7 +264,10 @@ fn test_relation_kind_count() {
     // Verify each variant has a type_name
     for kind in variants {
         let name = kind.type_name();
-        assert!(!name.is_empty(), "RelationKind variant should have a type_name");
+        assert!(
+            !name.is_empty(),
+            "RelationKind variant should have a type_name"
+        );
     }
 }
 
@@ -197,35 +277,79 @@ fn test_relation_kind_count() {
 #[test]
 fn test_element_kind_type_names() {
     let canonical = [
-        "Stakeholder", "Driver", "Assessment", "Goal", "Outcome",
-        "Principle", "Requirement", "Constraint", "Meaning", "Value",
-        "Resource", "Capability", "ValueStream", "CourseOfAction",
-        "BusinessActor", "BusinessRole", "BusinessCollaboration",
-        "BusinessInterface", "BusinessProcess", "BusinessFunction",
-        "BusinessInteraction", "BusinessEvent", "BusinessService",
-        "BusinessObject", "Contract", "Representation", "Product",
-        "ApplicationComponent", "ApplicationCollaboration",
-        "ApplicationInterface", "ApplicationFunction",
-        "ApplicationProcess", "ApplicationInteraction", "ApplicationEvent",
-        "ApplicationService", "DataObject",
-        "Node", "Device", "SystemSoftware", "TechnologyCollaboration",
-        "TechnologyInterface", "Path", "CommunicationNetwork", "Artifact",
-        "TechnologyFunction", "TechnologyProcess", "TechnologyInteraction",
-        "TechnologyEvent", "TechnologyService",
-        "Equipment", "Facility", "Material", "DistributionNetwork",
-        "WorkPackage", "Deliverable", "Plateau", "Gap",
-        "Grouping", "Location", "AndJunction", "OrJunction",
+        "Stakeholder",
+        "Driver",
+        "Assessment",
+        "Goal",
+        "Outcome",
+        "Principle",
+        "Requirement",
+        "Constraint",
+        "Meaning",
+        "Value",
+        "Resource",
+        "Capability",
+        "ValueStream",
+        "CourseOfAction",
+        "BusinessActor",
+        "BusinessRole",
+        "BusinessCollaboration",
+        "BusinessInterface",
+        "BusinessProcess",
+        "BusinessFunction",
+        "BusinessInteraction",
+        "BusinessEvent",
+        "BusinessService",
+        "BusinessObject",
+        "Contract",
+        "Representation",
+        "Product",
+        "ApplicationComponent",
+        "ApplicationCollaboration",
+        "ApplicationInterface",
+        "ApplicationFunction",
+        "ApplicationProcess",
+        "ApplicationInteraction",
+        "ApplicationEvent",
+        "ApplicationService",
+        "DataObject",
+        "Node",
+        "Device",
+        "SystemSoftware",
+        "TechnologyCollaboration",
+        "TechnologyInterface",
+        "Path",
+        "CommunicationNetwork",
+        "Artifact",
+        "TechnologyFunction",
+        "TechnologyProcess",
+        "TechnologyInteraction",
+        "TechnologyEvent",
+        "TechnologyService",
+        "Equipment",
+        "Facility",
+        "Material",
+        "DistributionNetwork",
+        "WorkPackage",
+        "Deliverable",
+        "Plateau",
+        "Gap",
+        "Grouping",
+        "Location",
+        "AndJunction",
+        "OrJunction",
     ];
 
     assert_eq!(canonical.len(), 61, "Should list exactly 61 element types");
 
     for name in canonical {
-        let kind = ElementKind::from_name(name).unwrap_or_else(|| {
-            panic!("from_name({}) returned None", name)
-        });
+        let kind = ElementKind::from_name(name)
+            .unwrap_or_else(|| panic!("from_name({}) returned None", name));
         assert_eq!(
-            kind.type_name(), name,
-            "type_name/from_name round-trip failed for {}", name,
+            kind.type_name(),
+            name,
+            "type_name/from_name round-trip failed for {}",
+            name,
         );
     }
 }
