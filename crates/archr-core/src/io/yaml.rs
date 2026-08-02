@@ -163,7 +163,10 @@ pub fn model_to_yaml(model: &Model) -> String {
 }
 
 /// Serialize an ArchiMate Model to YAML, optionally preserving original XML IDs.
-pub fn model_to_yaml_with_ids(model: &Model, original_ids: Option<&HashMap<String, ElementId>>) -> String {
+pub fn model_to_yaml_with_ids(
+    model: &Model,
+    original_ids: Option<&HashMap<String, ElementId>>,
+) -> String {
     let id_map: HashMap<ElementId, String> = original_ids
         .map(|map| map.iter().map(|(k, v)| (v.clone(), k.clone())).collect())
         .unwrap_or_else(|| HashMap::new());
