@@ -547,6 +547,11 @@ impl Index<RelationId> for Model {
         &self.relations[id.0]
     }
 }
+impl std::fmt::Display for ElementId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Tests
