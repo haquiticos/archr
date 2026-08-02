@@ -83,8 +83,8 @@ trap 'rm -rf "$TMPDIR"' EXIT
 # generate valid.yaml → XML
 "$BINARY" generate --input "$FIXTURES/valid.yaml" --output "$TMPDIR/out.archimate" 2>/dev/null; RC=$?
 assert_exit 0 "$RC" "generate valid.yaml"
-assert_contains "$(cat "$TMPDIR/out.archimate")" 'xmlns="http://www.opengroup.org/xsd/archimate/3.0/"' "XML has correct namespace"
-assert_contains "$(cat "$TMPDIR/out.archimate")" 'xsi:type="BusinessActor"' "XML has BusinessActor type"
+assert_contains "$(cat "$TMPDIR/out.archimate")" 'xmlns:archimate="http://www.archimatetool.com/archimate"' "XML has Archi native namespace"
+assert_contains "$(cat "$TMPDIR/out.archimate")" 'xsi:type="archimate:BusinessActor"' "XML has archimate:BusinessActor type"
 
 # parse XML → YAML
 "$BINARY" parse --input "$TMPDIR/out.archimate" --output "$TMPDIR/out.yaml" 2>/dev/null; RC=$?
