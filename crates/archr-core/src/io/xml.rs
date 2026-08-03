@@ -254,7 +254,7 @@ fn emit_diagram(
         let _ = writeln!(
             xml,
             "      <child xsi:type=\"archimate:DiagramObject\" id=\"{}\" \
-             archimateElement=\"{}\">",
+             archimateElementRef=\"{}\">",
             child_id, elem_ids[&elem.id],
         );
         let _ = writeln!(
@@ -270,7 +270,7 @@ fn emit_diagram(
                     xml,
                     "        <sourceConnection xsi:type=\"archimate:Connection\" \
                      id=\"{}\" source=\"{}\" target=\"{}\" \
-                     archimateRelationship=\"{}\"/>",
+                     archimateRelationshipRef=\"{}\"/>",
                     Uuid::new_v4(),
                     child_id,
                     child_ids[&rel.target],
