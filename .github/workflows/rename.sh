@@ -11,5 +11,5 @@ if [[ "$RUNNER_OS" == "Windows" ]]; then
   dir "$TARGET_PATH/release" | findstr "archr" | awk '{print $NF}' | xargs -I {} move "$TARGET_PATH/release/{}" "$ARTIFACT_NAME"
 else
   # Bash para Linux e macOS
-  mv "$TARGET_PATH/release/archr*" "$ARTIFACT_NAME"
+  find "$TARGET_PATH/release" -maxdepth 1 -name "archr" -type f -exec mv {} "$ARTIFACT_NAME" \;
 fi
