@@ -2,13 +2,13 @@
 //!
 //! Subcommands: validate, generate, parse, diff.
 
+use archr_core::io::yaml::SchemaError;
 use archr_core::{
     diff::ModelDiffAnalyzer,
     io::{xml, yaml},
     layout::LayoutResolver,
     validate::validate_model,
 };
-use archr_core::io::yaml::SchemaError;
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
 use std::fs;
@@ -90,8 +90,10 @@ fn run_validate(input_path: &str) -> ExitCode {
         Err(schema_errors) => {
             // Schema errors → success=false with structured errors.
             // If YAML is malformed (MalformedYaml), filter out schema errors.
-            let has_malformed_yaml = schema_errors.iter().any(|e| matches!(e, SchemaError::MalformedYaml(_)));
-            
+            let has_malformed_yaml = schema_errors
+                .iter()
+                .any(|e| matches!(e, SchemaError::MalformedYaml(_)));
+
             let errors: Vec<serde_json::Value> = if has_malformed_yaml {
                 // Show only MalformedYaml errors, drop all schema errors
                 schema_errors
@@ -119,7 +121,7 @@ fn run_validate(input_path: &str) -> ExitCode {
                     })
                     .collect()
             };
-            
+
             let result = serde_json::json!({
                 "success": false,
                 "errors": errors,
