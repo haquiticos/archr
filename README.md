@@ -30,8 +30,27 @@ A headless Rust engine for ArchiMate 3.2 — validate, manipulate, and export ar
 ### Prebuilt Binary (Recommended)
 
 Download the latest release from [GitHub Releases](https://github.com/haquiticos/archr/releases) and run:
+
+#### Linux (x86_64)
 ```bash
-./archr --version
+./archr-linux-x86_64 --version
+```
+
+#### macOS (Intel)
+```bash
+chmod +x archr-macos-x86_64
+./archr-macos-x86_64 --version
+```
+
+#### macOS (Apple Silicon)
+```bash
+chmod +x archr-macos-arm64
+./archr-macos-arm64 --version
+```
+
+#### Windows (x86_64)
+```bash
+archr-windows-x86_64.exe --version
 ```
 
 ### Cargo Install
@@ -48,17 +67,14 @@ archr --version
 git clone https://github.com/haquiticos/archr.git
 cd archr
 
-# Build
-cargo build --release
-# Binary at target/release/archr
+# Build for all targets
+cargo build --release --target x86_64-unknown-linux-gnu
+cargo build --release --target x86_64-pc-windows-msvc
+cargo build --release --target x86_64-apple-darwin
+cargo build --release --target aarch64-apple-darwin
+
+# Binaries are in target/{target}/release/
 ```
-
-## Quick Start
-
-### Build
-
-```bash
-cargo build --release
 # Binary at target/release/archr
 ```
 
@@ -208,7 +224,6 @@ archr/
 - **Layout algorithm correctness**: Refine grid placement for complex diagrams
 - **Real-world XML parser resilience**: Enhance XML parsing for malformed but valid `.archimate` files
 - **Performance optimization**: Reduce memory usage and improve startup time
-- **Cross-platform testing**: Expand CI to include Windows and macOS builds
 - **Documentation improvements**: More examples, tutorials, and best practices
 
 ### Future Features
@@ -221,7 +236,6 @@ archr/
 We welcome feature requests and feedback. Please open an issue or join our [Discussions](https://github.com/haquiticos/archr/discussions).
 
 ## Agent Skill
-
 The `skill/` directory contains an Agent Skill for AI assistants (Claude Code, VS Code Copilot, OpenAI Codex). The Python wrapper (`archr.py`) is self-contained — stdlib only, no pip install.
 
 ```bash
@@ -236,16 +250,6 @@ python3 skill/scripts/archr.py generate model.yaml --output model.archimate
 ```
 
 Set `ARCHR_BIN` to point to a custom binary location if `archr` isn't in `PATH`.
-
-## Testing
-
-```bash
-# Unit tests (41 tests)
-cargo test -p archr-core --lib
-
-# End-to-end suite (19 tests, builds release binary)
-bash tests/e2e.sh
-```
 
 ## Dependencies
 
