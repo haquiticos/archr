@@ -9,6 +9,7 @@ jobs:
   build:
     permissions:
       contents: write
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
@@ -24,9 +25,12 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact: archr-macos-arm64
-    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
+      - name: Verify target installed
+        run: rustup target list | grep "${{ matrix.target }}"
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
       - name: Rename binary
