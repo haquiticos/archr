@@ -96,7 +96,7 @@ fn run_validate(input_path: &str, _format: &str) -> ExitCode {
                 .map(|e| {
                     serde_json::json!({
                         "code": format!("{:?}", e),
-                        "message": format!("Schema validation error: {:?}", e),
+                        "message": format!("Schema validation error: {}", yaml::schema_error_message(e)),
                     })
                 })
                 .collect();

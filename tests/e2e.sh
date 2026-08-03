@@ -63,6 +63,19 @@ assert_contains "$OUTPUT" '"success": false' "invalid_rel.yaml has success:false
 OUTPUT=$("$BINARY" validate --input "$FIXTURES/duplicate_id.yaml" 2>/dev/null); RC=$?
 assert_exit 1 "$RC" "validate duplicate_id.yaml"
 
+# malformed.yaml → exit 1, success:false, MALFORMED_YAML (NOT InvalidId)
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/malformed.yaml" 2>/dev/null); RC=$?
+assert_exit 1 "$RC" "validate malformed.yaml"
+assert_contains "$OUTPUT" '"success": false' "malformed.yaml has success:false"
+assert_contains "$OUTPUT" 'MalformedYaml' "malformed.yaml reports MalformedYaml code"
+if echo "$OUTPUT" | grep -q '"InvalidId"'; then
+    echo "FAIL: malformed.yaml must not be reported as InvalidId"
+    FAIL=$((FAIL + 1))
+else
+    echo "PASS: malformed.yaml is not misreported as InvalidId"
+    PASS=$((PASS + 1))
+fi
+
 # self_loop.yaml → exit 0 (Association self-loop is valid)
 OUTPUT=$("$BINARY" validate --input "$FIXTURES/self_loop.yaml" 2>/dev/null); RC=$?
 assert_exit 0 "$RC" "validate self_loop.yaml"
