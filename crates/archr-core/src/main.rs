@@ -8,6 +8,7 @@ use archr_core::{
     layout::LayoutResolver,
     validate::validate_model,
 };
+use archr_core::io::yaml::SchemaError;
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
 use std::fs;
@@ -91,15 +92,37 @@ fn run_validate(input_path: &str, _format: &str) -> ExitCode {
         Ok(m) => m,
         Err(schema_errors) => {
             // Schema errors → success=false with structured errors.
-            let errors: Vec<serde_json::Value> = schema_errors
-                .iter()
-                .map(|e| {
-                    serde_json::json!({
-                        "code": format!("{:?}", e),
-                        "message": format!("Schema validation error: {}", yaml::schema_error_message(e)),
+            // If YAML is malformed (MalformedYaml), filter out schema errors.
+            let has_malformed_yaml = schema_errors.iter().any(|e| matches!(e, SchemaError::MalformedYaml(_)));
+            
+            let errors: Vec<serde_json::Value> = if has_malformed_yaml {
+                // Show only MalformedYaml errors, drop all schema errors
+                schema_errors
+                    .iter()
+                    .filter_map(|e| {
+                        if let SchemaError::MalformedYaml(msg) = e {
+                            Some(serde_json::json!({
+                                "code": "MalformedYaml",
+                                "message": format!("YAML parsing error: {}", msg),
+                            }))
+                        } else {
+                            None
+                        }
                     })
-                })
-                .collect();
+                    .collect()
+            } else {
+                // Show all schema errors normally
+                schema_errors
+                    .iter()
+                    .map(|e| {
+                        serde_json::json!({
+                            "code": format!("{:?}", e),
+                            "message": format!("Schema validation error: {}", yaml::schema_error_message(e)),
+                        })
+                    })
+                    .collect()
+            };
+            
             let result = serde_json::json!({
                 "success": false,
                 "errors": errors,
@@ -108,7 +131,6 @@ fn run_validate(input_path: &str, _format: &str) -> ExitCode {
             return ExitCode::from(1);
         }
     };
-
     let vr = validate_model(&model);
     let json = serde_json::to_string_pretty(&vr).unwrap_or_else(|_| "{}".to_string());
     println!("{}", json);
