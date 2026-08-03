@@ -2,6 +2,7 @@
 //!
 //! Subcommands: validate, generate, parse, diff.
 
+use archr_core::io::yaml::SchemaError;
 use archr_core::{
     diff::ModelDiffAnalyzer,
     io::{xml, yaml},
@@ -31,9 +32,6 @@ enum Commands {
         /// Input YAML file path.
         #[arg(long)]
         input: String,
-        /// Output format.
-        #[arg(long, default_value = "json")]
-        format: String,
     },
     /// Generate Open Exchange XML from a YAML model.
     Generate {
@@ -67,7 +65,7 @@ enum Commands {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Validate { input, format } => run_validate(&input, &format),
+        Commands::Validate { input } => run_validate(&input),
         Commands::Generate { input, output } => run_generate(&input, &output),
         Commands::Parse { input, output } => run_parse(&input, &output),
         Commands::Diff { old, new } => run_diff(&old, &new),
@@ -78,7 +76,7 @@ fn main() -> ExitCode {
 // validate
 // ---------------------------------------------------------------------------
 
-fn run_validate(input_path: &str, _format: &str) -> ExitCode {
+fn run_validate(input_path: &str) -> ExitCode {
     let yaml_str = match fs::read_to_string(input_path) {
         Ok(s) => s,
         Err(e) => {
@@ -91,15 +89,39 @@ fn run_validate(input_path: &str, _format: &str) -> ExitCode {
         Ok(m) => m,
         Err(schema_errors) => {
             // Schema errors → success=false with structured errors.
-            let errors: Vec<serde_json::Value> = schema_errors
+            // If YAML is malformed (MalformedYaml), filter out schema errors.
+            let has_malformed_yaml = schema_errors
                 .iter()
-                .map(|e| {
-                    serde_json::json!({
-                        "code": format!("{:?}", e),
-                        "message": format!("Schema validation error: {}", yaml::schema_error_message(e)),
+                .any(|e| matches!(e, SchemaError::MalformedYaml(_)));
+
+            let errors: Vec<serde_json::Value> = if has_malformed_yaml {
+                // Show only MalformedYaml errors, drop all schema errors
+                schema_errors
+                    .iter()
+                    .filter_map(|e| {
+                        if let SchemaError::MalformedYaml(msg) = e {
+                            Some(serde_json::json!({
+                                "code": "MalformedYaml",
+                                "message": format!("YAML parsing error: {}", msg),
+                            }))
+                        } else {
+                            None
+                        }
                     })
-                })
-                .collect();
+                    .collect()
+            } else {
+                // Show all schema errors normally
+                schema_errors
+                    .iter()
+                    .map(|e| {
+                        serde_json::json!({
+                            "code": format!("{:?}", e),
+                            "message": format!("Schema validation error: {}", yaml::schema_error_message(e)),
+                        })
+                    })
+                    .collect()
+            };
+
             let result = serde_json::json!({
                 "success": false,
                 "errors": errors,
@@ -108,7 +130,6 @@ fn run_validate(input_path: &str, _format: &str) -> ExitCode {
             return ExitCode::from(1);
         }
     };
-
     let vr = validate_model(&model);
     let json = serde_json::to_string_pretty(&vr).unwrap_or_else(|_| "{}".to_string());
     println!("{}", json);
