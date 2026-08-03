@@ -12,6 +12,7 @@ echo "==> Building archr (release)..."
 cd "$PROJECT_ROOT"
 cargo build --release 2>/dev/null
 BINARY="$PROJECT_ROOT/target/release/archr"
+BINARY_ERR=/dev/stderr
 
 PASS=0
 FAIL=0
@@ -45,26 +46,26 @@ assert_contains() {
 echo "==> Testing validate command..."
 
 # valid.yaml → exit 0, success:true
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/valid.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/valid.yaml" ); RC=$?
 assert_exit 0 "$RC" "validate valid.yaml"
 assert_contains "$OUTPUT" '"success": true' "valid.yaml has success:true"
 
 # orphan_id.yaml → exit 1, success:false
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/orphan_id.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/orphan_id.yaml" ); RC=$?
 assert_exit 1 "$RC" "validate orphan_id.yaml"
 assert_contains "$OUTPUT" '"success": false' "orphan_id.yaml has success:false"
 
 # invalid_rel.yaml → exit 1, INVALID_RELATIONSHIP
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/invalid_rel.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/invalid_rel.yaml" ); RC=$?
 assert_exit 1 "$RC" "validate invalid_rel.yaml"
 assert_contains "$OUTPUT" '"success": false' "invalid_rel.yaml has success:false"
 
 # duplicate_id.yaml → exit 1
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/duplicate_id.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/duplicate_id.yaml" ); RC=$?
 assert_exit 1 "$RC" "validate duplicate_id.yaml"
 
 # malformed.yaml → exit 1, success:false, MALFORMED_YAML (NOT InvalidId)
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/malformed.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/malformed.yaml" ); RC=$?
 assert_exit 1 "$RC" "validate malformed.yaml"
 assert_contains "$OUTPUT" '"success": false' "malformed.yaml has success:false"
 assert_contains "$OUTPUT" 'MalformedYaml' "malformed.yaml reports MalformedYaml code"
@@ -77,15 +78,17 @@ else
 fi
 
 # self_loop.yaml → exit 0 (Association self-loop is valid)
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/self_loop.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/self_loop.yaml" ); RC=$?
 assert_exit 0 "$RC" "validate self_loop.yaml"
 
 # empty.yaml → exit 0, success:true
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/empty.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/empty.yaml" ); RC=$?
 assert_exit 0 "$RC" "validate empty.yaml"
 
-# cyclic.yaml → exit 0 (cycles are valid in validation)
-OUTPUT=$("$BINARY" validate --input "$FIXTURES/cyclic.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" diff --old "$FIXTURES/old_no_dup.archimate" --new "$FIXTURES/duplicate_names.yaml" 2>/dev/stderr); RC=$?
+assert_exit 2 "$RC" "diff duplicate_names" + echo "Output length: ${#OUTPUT}"assert_contains "$OUTPUT" "reference errors" "diff reports reference errors"
+
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/cyclic.yaml" ); RC=$?
 assert_exit 0 "$RC" "validate cyclic.yaml"
 
 echo "==> Testing generate + parse round-trip..."
@@ -94,17 +97,17 @@ TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
 # generate valid.yaml → XML
-"$BINARY" generate --input "$FIXTURES/valid.yaml" --output "$TMPDIR/out.archimate" 2>/dev/null; RC=$?
+"$BINARY" generate --input "$FIXTURES/valid.yaml" --output "$TMPDIR/out.archimate" ; RC=$?
 assert_exit 0 "$RC" "generate valid.yaml"
 assert_contains "$(cat "$TMPDIR/out.archimate")" 'xmlns:archimate="http://www.archimatetool.com/archimate"' "XML has Archi native namespace"
 assert_contains "$(cat "$TMPDIR/out.archimate")" 'xsi:type="archimate:BusinessActor"' "XML has archimate:BusinessActor type"
 
 # parse XML → YAML
-"$BINARY" parse --input "$TMPDIR/out.archimate" --output "$TMPDIR/out.yaml" 2>/dev/null; RC=$?
+"$BINARY" parse --input "$TMPDIR/out.archimate" --output "$TMPDIR/out.yaml" ; RC=$?
 assert_exit 0 "$RC" "parse out.archimate"
 
 # diff between generated XML and original YAML → empty diff
-OUTPUT=$("$BINARY" diff --old "$TMPDIR/out.archimate" --new "$FIXTURES/valid.yaml" 2>/dev/null); RC=$?
+OUTPUT=$("$BINARY" diff --old "$TMPDIR/out.archimate" --new "$FIXTURES/valid.yaml" ); RC=$?
 assert_exit 0 "$RC" "diff valid round-trip"
 assert_contains "$OUTPUT" '"added": \[\]' "diff has no additions"
 
@@ -129,3 +132,6 @@ else
     echo "SOME TESTS FAILED"
     exit 1
 fi
+
+OUTPUT=$("$BINARY" diff --old "$FIXTURES/old_no_dup.archimate" --new "$FIXTURES/duplicate_names.yaml" ); RC=$?
+assert_exit 2 "$RC" "diff duplicate_names" 

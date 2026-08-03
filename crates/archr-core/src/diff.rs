@@ -16,6 +16,13 @@ use serde::Serialize;
 pub enum ReferenceErrorType {
     /// A relationship references a non-existent element id.
     UndefinedId,
+    /// An element name appears more than once in a model.
+    DuplicateName {
+        /// The duplicate name.
+        name: String,
+        /// Kinds of elements that share this name.
+        kinds: Vec<String>,
+    },
 }
 
 /// A reference error found in a model.
@@ -73,6 +80,32 @@ impl ModelDiffAnalyzer {
     pub fn analyze_update(&self, new_model: &Model) -> Result<DiffReport, Vec<ReferenceError>> {
         // Relationships in parsed models are guaranteed to have resolvable endpoints (validated by parser).
         // Compute diff by name.
+        // Check for duplicate names before proceeding.
+        let mut duplicate_names = std::collections::HashMap::new();
+        for elem in new_model.iter_elements() {
+            duplicate_names
+                .entry(elem.name.clone())
+                .or_insert_with(Vec::new)
+                .push(elem.kind.type_name().to_string());
+        }
+
+        // Report any duplicate names as errors.
+        let mut duplicate_errors = Vec::new();
+        for (name, kinds) in &duplicate_names {
+            if kinds.len() > 1 {
+                duplicate_errors.push(ReferenceError {
+                    id: name.clone(),
+                    error_type: ReferenceErrorType::DuplicateName {
+                        name: name.clone(),
+                        kinds: kinds.clone(),
+                    },
+                });
+            }
+        }
+
+        if !duplicate_errors.is_empty() {
+            return Err(duplicate_errors);
+        }
 
         let mut report = DiffReport::default();
 
@@ -112,6 +145,8 @@ impl ModelDiffAnalyzer {
 // Tests
 // ---------------------------------------------------------------------------
 
+#[cfg(test)]
+#[cfg(test)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -194,6 +229,33 @@ mod tests {
         assert_eq!(report.removed, vec!["Service"]);
     }
 
+    #[test]
+    fn test_duplicate_names() {
+        let existing = sample_model();
+        let analyzer = ModelDiffAnalyzer::from_existing(&existing);
+
+        let mut new = sample_model();
+        new.add_element("Dup", ElementKind::BusinessActor);
+        new.add_element("Dup", ElementKind::Node);
+
+        let result = analyzer.analyze_update(&new);
+        assert!(result.is_err());
+
+        let errors = result.unwrap_err();
+        assert_eq!(errors.len(), 1);
+
+        let error = &errors[0];
+        assert_eq!(error.id, "Dup");
+        match &error.error_type {
+            ReferenceErrorType::DuplicateName { name, kinds } => {
+                assert_eq!(name, "Dup");
+                assert_eq!(kinds.len(), 2);
+                assert!(kinds.contains(&"BusinessActor".to_string()));
+                assert!(kinds.contains(&"Node".to_string()));
+            }
+            _ => panic!("Expected DuplicateName error"),
+        }
+    }
     #[test]
     fn test_empty_models() {
         let existing = Model::new("empty");
