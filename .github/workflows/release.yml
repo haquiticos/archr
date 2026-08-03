@@ -7,21 +7,37 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: archr-linux-x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: archr-windows-x86_64.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: archr-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: archr-macos-arm64
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      - name: Cache Cargo
-        uses: swatinem/rust-cache@v2
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
+      - name: Verify target installed
+        run: rustup target list | grep "${{ matrix.target }}"
       - name: Build
-        run: cargo build --release -p archr-core
+        run: cargo build --release --target ${{ matrix.target }}
       - name: Rename binary
-        run: cp target/release/archr archr-linux-x86_64
-      - name: Create release
-        uses: softprops/action-gh-release@v2
+        run: bash .github/workflows/rename.sh "${{ runner.os }}" "${{ matrix.artifact }}" "target/${{ matrix.target }}"
+      - uses: softprops/action-gh-release@v2
         with:
-          files: archr-linux-x86_64
+          files: target/${{ matrix.target }}/release/${{ matrix.artifact }}
           generate_release_notes: true
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
