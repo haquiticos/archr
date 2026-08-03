@@ -37,7 +37,7 @@ jobs:
         run: bash .github/workflows/rename.sh "${{ runner.os }}" "${{ matrix.artifact }}" "target/${{ matrix.target }}"
       - uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact }}
+          files: target/${{ matrix.target }}/release/${{ matrix.artifact }}
           generate_release_notes: true
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
