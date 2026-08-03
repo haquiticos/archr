@@ -45,6 +45,20 @@ pub enum SchemaError {
     UndefinedId,
     DuplicateId,
     InvalidId,
+    /// Structurally malformed YAML (bad indentation, stray characters, missing fields).
+    /// Carries the underlying serde_yaml error message for diagnostics.
+    MalformedYaml(String),
+}
+
+/// Returns a human-readable message for a `SchemaError`.
+///
+/// Structured-data variants (`UnknownKind`, `UndefinedId`, `DuplicateId`, `InvalidId`)
+/// collapse to their variant name; `MalformedYaml` surfaces the carried serde message.
+pub fn schema_error_message(error: &SchemaError) -> String {
+    match error {
+        SchemaError::MalformedYaml(msg) => msg.clone(),
+        other => format!("{other:?}"),
+    }
 }
 
 /// Result of YAML parsing with accumulated schema errors.
@@ -71,7 +85,7 @@ pub fn parse_yaml(input: &str) -> ParseResult<Model> {
 
 pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     let yaml_model: YamlModel =
-        serde_yaml::from_str(input).map_err(|_| vec![SchemaError::InvalidId])?;
+        serde_yaml::from_str(input).map_err(|e| vec![SchemaError::MalformedYaml(e.to_string())])?;
 
     let YamlModelInner {
         name,
@@ -346,6 +360,47 @@ model:
             errors.contains(&SchemaError::InvalidId),
             "expected InvalidId in {:?}",
             errors
+        );
+    }
+
+    #[test]
+    fn test_malformed_yaml_not_invalid_id() {
+        // Stray indentation under `name:` — structurally broken YAML, not an id bug.
+        let yaml = r#"
+model:
+  name: Malformed Model
+  elements:
+    - id: actor_001
+      name: Broken
+        kind: BusinessActor
+"#;
+
+        let result = parse_yaml(yaml);
+        assert!(result.is_err(), "expected parse failure");
+        let errors = result.unwrap_err();
+        // The fix: a malformed file must NOT surface as InvalidId.
+        assert!(
+            !errors.contains(&SchemaError::InvalidId),
+            "malformed YAML must not be reported as InvalidId: {:?}",
+            errors
+        );
+        assert!(
+            errors
+                .iter()
+                .any(|e| matches!(e, SchemaError::MalformedYaml(_))),
+            "expected a MalformedYaml error in {:?}",
+            errors
+        );
+        let malformed = errors
+            .iter()
+            .find_map(|e| match e {
+                SchemaError::MalformedYaml(msg) => Some(msg),
+                _ => None,
+            })
+            .expect("MalformedYaml present");
+        assert!(
+            !malformed.is_empty(),
+            "MalformedYaml must carry the serde message, got empty"
         );
     }
 
