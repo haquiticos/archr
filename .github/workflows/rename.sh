@@ -1,13 +1,14 @@
 #!/bin/bash
 set -e
 
-if [[ "${{ runner.os }}" == "Windows" ]]; then
+RUNNER_OS="${1}"
+ARTIFACT_NAME="${2}"
+
+if [[ "$RUNNER_OS" == "Windows" ]]; then
   # PowerShell para Windows
   # Encontrar o arquivo e renomear
-  findstr "archr" target/${{ matrix.target }}/release | awk '{print $NF}' | while read -r old_name; do
-    mv "target/${{ matrix.target }}/release/$old_name" "${{ matrix.artifact }}"
-  done
+  dir target/release | findstr "archr" | awk '{print $NF}' | xargs -I {} move "target/release/{}" "$ARTIFACT_NAME"
 else
   # Bash para Linux e macOS
-  find target/${{ matrix.target }}/release -maxdepth 1 -name "archr*" -exec mv {} ${{ matrix.artifact }} \;
+  mv target/release/archr* "$ARTIFACT_NAME"
 fi

@@ -24,15 +24,12 @@ jobs:
             artifact: archr-macos-arm64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
-      - name: Set permissions for rename script
-        run: chmod +x .github/workflows/rename.sh
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
       - name: Rename binary
-        run: bash .github/workflows/rename.sh
+        run: bash .github/workflows/rename.sh "${{ runner.os }}" "${{ matrix.artifact }}"
       - uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.artifact }}
