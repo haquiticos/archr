@@ -1,0 +1,14 @@
+model:
+  name: old no dup
+  elements:
+    - id: dup_001
+      name: Dup
+      kind: BusinessActor
+    - id: other_001
+      name: Other
+      kind: BusinessService
+  relationships:
+    - id: rel_001
+      source: dup_001
+      target: other_001
+      kind: Serving

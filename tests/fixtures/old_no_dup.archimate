@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="old no dup" id="ca646a70-8e97-436c-9f47-97a0e651d9ee" version="5.0.0">
+  <folder name="Business" id="d7ff51f2-3525-4a0c-a137-518152a508aa" type="business">
+    <element xsi:type="archimate:BusinessActor" name="Dup" id="dup_001"/>
+    <element xsi:type="archimate:BusinessService" name="Other" id="other_001"/>
+  </folder>
+  <folder name="Relations" id="30c3e76d-962a-4dd4-8331-14feef282dd5" type="relations">
+    <element xsi:type="archimate:ServingRelationship" source="dup_001" target="other_001" id="rel_001"/>
+  </folder>
+  <folder name="Views" id="6629b7d1-b275-4a17-8fe7-7b476caa6520" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Default View" id="90c3cf5c-38e4-47cb-8c88-04351064704b">
+      <child xsi:type="archimate:DiagramObject" id="5e924eec-aa6c-4ef6-b202-3f7f48509b34" archimateElementRef="dup_001">
+        <bounds x="0" y="0" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="564c7dd7-27ea-4227-bdf4-a27fe3cbdd44" source="5e924eec-aa6c-4ef6-b202-3f7f48509b34" target="61d2377a-72a1-4a52-886b-65568fed7ee9" archimateRelationshipRef="rel_001"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="61d2377a-72a1-4a52-886b-65568fed7ee9" archimateElementRef="other_001">
+        <bounds x="0" y="120" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

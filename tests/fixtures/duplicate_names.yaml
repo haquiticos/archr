@@ -1,0 +1,17 @@
+model:
+  name: duplicate names test
+  elements:
+    - id: dup_001
+      name: Dup
+      kind: BusinessActor
+    - id: dup_002
+      name: Dup
+      kind: Node
+    - id: other_001
+      name: Other
+      kind: BusinessService
+  relationships:
+    - id: rel_001
+      source: dup_001
+      target: dup_002
+      kind: Serving
