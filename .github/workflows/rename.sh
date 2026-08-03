@@ -7,8 +7,9 @@ TARGET_PATH="${3}"
 
 if [[ "$RUNNER_OS" == "Windows" ]]; then
   # PowerShell para Windows
-  # Listar arquivos para debug
-  pwsh -Command "if (Test-Path '$TARGET_PATH/release/archr.exe') { Rename-Item -LiteralPath '$TARGET_PATH/release/archr.exe' -NewName '$ARTIFACT_NAME' -Force }"
+  # Criar arquivo de script temporário
+  echo 'if (Test-Path "$PSScriptRoot/release/archr.exe") { Rename-Item -LiteralPath "$PSScriptRoot/release/archr.exe" -NewName "archr-windows-x86_64.exe" -Force }' > /tmp/rename.ps1
+  pwsh -ExecutionPolicy Bypass -File /tmp/rename.ps1
 else
   # Bash para Linux e macOS
   find "$TARGET_PATH/release" -maxdepth 1 -name "archr" -type f -exec mv {} "$ARTIFACT_NAME" \;
