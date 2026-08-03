@@ -130,7 +130,7 @@ Output (JSON):
 
 | Command | Args | Exit Codes |
 |---------|------|------------|
-| `validate` | `--input <yaml> [--format json]` | 0 valid, 1 invalid, 2 I/O |
+| `validate` | `--input <yaml>` | 0 valid, 1 invalid, 2 I/O |
 | `generate` | `--input <yaml> --output <xml>` | 0 success, 2 error |
 | `parse` | `--input <xml> --output <yaml>` | 0 success, 2 error |
 | `diff` | `--old <xml> --new <yaml>` | 0 success, 2 error |

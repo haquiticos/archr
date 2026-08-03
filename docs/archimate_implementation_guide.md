@@ -21,7 +21,7 @@ The central decision of v2: **Rust engine and AI Skill live in the same reposito
    |
    v
 [Skill: archr.py]     --> 1. Writes YAML to disk
-   |                      2. Executes `archr validate --format json`
+   |                      2. Executes `archr validate`
    |                      3. Captures stdout (JSON) and stderr
    v
 [Rust CLI: archr]    --> a. Parse YAML -> Arena/Indices
@@ -29,6 +29,9 @@ The central decision of v2: **Rust engine and AI Skill live in the same reposito
                           c. Diff with existing model (if applicable)
                           d. Automatic layout resolution (graph)
                           e. Serialization to XML (Open Exchange) / YAML / Mermaid
+   |
+   v
+[User]
    |
    v
 [.archimate File (XML)] --> Opened in Archi editor
@@ -120,11 +123,10 @@ thiserror = "1.0"
 ## 4. Environment Configuration
 
 The tool is **stateless** and runs in sandbox mode. There are no mandatory environment variables or backend services. Configuration via CLI arguments.
-
 **Usage Structure (Rust binary):**
 ```bash
 # Validate
-./archr validate --input model.yaml --format json
+./archr validate --input model.yaml
 
 # Generate final XML
 ./archr generate --input model.yaml --output model.archimate
@@ -135,6 +137,7 @@ The tool is **stateless** and runs in sandbox mode. There are no mandatory envir
 # Diff between existing model and new YAML
 ./archr diff --old model.archimate --new model.yaml
 ```
+---
 
 **Usage Structure (Python Skill — invoked directly by agent via terminal):**
 ```bash
@@ -185,13 +188,11 @@ model:
 
 ## 6. API Contracts / Endpoints
 
-Since the final decision was for **CLI** (discarding REST API due to idle server overhead and friction for AI Agents), the "endpoints" are `clap` commands.
-
 ### Rust Binary Endpoints
 
 | Command     | Arguments                                   | Response (stdout)                              |
 |:------------|:---------------------------------------------|:-----------------------------------------------|
-| `validate`  | `--input <file>`, `--format json`            | JSON with success or structured error list. |
+| `validate`  | `--input <file>`                             | JSON with success or structured error list. |
 | `generate`  | `--input <yaml>`, `--output <xml>`           | Status message in text.                   |
 | `parse`     | `--input <xml>`, `--output <yaml>`           | Status message in text.                   |
 | `diff`      | `--old <xml>`, `--new <yaml>`                | JSON with added/removed elements.      |
@@ -494,8 +495,6 @@ enum Commands {
     Validate {
         #[arg(short, long)]
         input: PathBuf,
-        #[arg(long, default_value = "json")]
-        format: String,
     },
     Generate {
         #[arg(short, long)]
@@ -589,7 +588,7 @@ import os
 def validate(yaml_file):
     """Validate YAML against ArchiMate rules"""
     result = subprocess.run(
-        ["archr", "validate", "--input", yaml_file, "--format", "json"],
+        ["archr", "validate", "--input", yaml_file],
         capture_output=True,
         text=True,
         check=False
@@ -739,7 +738,7 @@ jobs:
         run: cargo build --release
       - name: Run E2E Tests
         run: |
-          ./target/release/archr validate --input test_model.yaml --format json
+          ./target/release/archr validate --input test_model.yaml
           python skill/scripts/archr.py validate test_model.yaml
 
   release:

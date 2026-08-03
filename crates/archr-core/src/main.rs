@@ -32,9 +32,6 @@ enum Commands {
         /// Input YAML file path.
         #[arg(long)]
         input: String,
-        /// Output format.
-        #[arg(long, default_value = "json")]
-        format: String,
     },
     /// Generate Open Exchange XML from a YAML model.
     Generate {
@@ -68,7 +65,7 @@ enum Commands {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Validate { input, format } => run_validate(&input, &format),
+        Commands::Validate { input } => run_validate(&input),
         Commands::Generate { input, output } => run_generate(&input, &output),
         Commands::Parse { input, output } => run_parse(&input, &output),
         Commands::Diff { old, new } => run_diff(&old, &new),
@@ -79,7 +76,7 @@ fn main() -> ExitCode {
 // validate
 // ---------------------------------------------------------------------------
 
-fn run_validate(input_path: &str, _format: &str) -> ExitCode {
+fn run_validate(input_path: &str) -> ExitCode {
     let yaml_str = match fs::read_to_string(input_path) {
         Ok(s) => s,
         Err(e) => {

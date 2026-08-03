@@ -107,7 +107,7 @@ def cmd_validate(args: argparse.Namespace) -> None:
 
     exit_code, stdout, stderr = _run(
         binary,
-        ["validate", "--input", args.input, "--format", "json"],
+        ["validate", "--input", args.input],
     )
 
     print(stdout, end="")

@@ -1,0 +1,9 @@
+{
+  "ops": [
+    {
+      "pat": "use archr_core::{\n    diff::ModelDiffAnalyzer,\n    io::{xml, yaml},\n    layout::LayoutResolver,\n    validate::validate_model,\n};",
+      "out": "use archr_core::{\n    diff::ModelDiffAnalyzer,\n    io::{xml, yaml},\n    layout::LayoutResolver,\n    validate::validate_model,\n};\nuse archr_core::io::yaml::SchemaError;"
+    }
+  ],
+  "paths": ["crates/archr-core/src/main.rs"]
+}

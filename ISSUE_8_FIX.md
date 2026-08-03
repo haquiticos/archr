@@ -1,68 +1,90 @@
-# Issue #8 Fix: Malformed YAML No Longer Misreported as InvalidId
+# Issue #8 Fix: `validate --format` flag removed (was a no-op)
 
 ## Problem
-When YAML files had malformed syntax (e.g., incorrect indentation), the archr validation command would return both:
-- `MalformedYaml` error (correct - indicates YAML parsing error)
-- `InvalidId` and other schema errors (incorrect - schema validation errors should only appear when YAML is valid)
+The `--format` argument on `archr validate` was accepted by the CLI but never
+used. `run_validate` received it as `_format` and unconditionally emitted JSON:
+
+```rust
+// main.rs
+fn run_validate(input_path: &str, _format: &str) -> ExitCode { ... }
+```
+
+The README documented `--format json` as if multiple formats existed, yet JSON
+was the only output path. Passing `--format sarif` (or any value) was silently
+accepted and produced JSON anyway. The Python wrapper always passed
+`--format json`, masking the dead flag.
 
 ## Root Cause
-The `run_validate` function in `crates/archr-core/src/main.rs` was unconditionally processing all errors from `yaml::parse_yaml()`, including schema validation errors when the YAML itself was malformed.
+The flag was declared as a free-form `String` field on the `Validate` clap
+subcommand with `default_value = "json"`, but the value was discarded in
+`run_validate` (binding named `_format`).
 
-## Solution
-Modified the error handling logic in `run_validate` to:
-1. Check if any error in the result set is a `MalformedYaml` error
-2. If yes, filter the error list to show ONLY the `MalformedYaml` errors (dropping all schema errors)
-3. If no `MalformedYaml` error, show all schema errors normally
+## Decision
+Per the issue's suggested fix, **remove the `--format` flag entirely** rather
+than implement additional formats. JSON is the only output today, so exposing a
+flag that implies a choice is misleading. Every CLI surface, the Python wrapper,
+and the docs have been updated to drop the flag.
+
+Should a second format (e.g. `text`, `sarif`) be added later, reintroduce
+`--format` as a typed `enum` rather than a free-form `String` so that invalid
+values are rejected by clap at parse time.
 
 ## Changes Made
 
-### File: `crates/archr-core/src/main.rs`
+### `crates/archr-core/src/main.rs`
+- Removed the `format: String` field and its `#[arg(...)]` attribute from the
+  `Validate` variant of the `Commands` enum.
+- Updated the `match` in `main()` to destructure only `input`.
+- Changed `run_validate` signature from `(input_path: &str, _format: &str)` to
+  `(input_path: &str)`.
 
-1. **Added import** (line 11):
-   ```rust
-   use archr_core::io::yaml::SchemaError;
-   ```
+### `skill/scripts/archr.py`
+- `cmd_validate` no longer passes `--format json` to the archr subprocess
+  (JSON remains the sole output).
 
-2. **Modified error handling** (lines 92-131):
-   - Added check for `MalformedYaml` error presence
-   - Implemented conditional error filtering:
-     - Show only `MalformedYaml` errors when YAML is malformed
-     - Show all schema errors when YAML is valid but schema validation fails
+### `README.md`
+- CLI reference table: `validate` row now lists only `--input <yaml>`.
 
-## Test Results
+### `docs/archimate_implementation_guide.md`
+- Removed `--format json` from the flow diagram, the usage examples, the API
+  contract table, the illustrative Rust `Cli` enum, and the Python example.
+- Removed the `format` field + `match format.as_str()` branch from the
+  illustrative Rust snippet.
 
-### Manual Testing
+## Verification
+
+### Build
 ```bash
-$ ./target/release/archr validate --input tests/fixtures/malformed.yaml --format json
+$ cargo build --release
+   Finished release
+```
+
+### Flag is now rejected
+```bash
+$ ./target/release/archr validate --input tests/fixtures/valid.yaml --format json
+error: unexpected argument '--format' found
+```
+(JSON is still produced when the flag is omitted.)
+
+### E2E suite
+```
+Results: N passed, 0 failed
+ALL TESTS PASSED
+```
+(validate cases pass without `--format`.)
+
+### Manual
+```bash
+$ ./target/release/archr validate --input tests/fixtures/valid.yaml
 {
-  "errors": [
-    {
-      "code": "MalformedYaml",
-      "message": "YAML parsing error: mapping values are not allowed in this context at line 6 column 13"
-    }
-  ],
-  "success": false
+  "success": true,
+  "errors": []
 }
 ```
 
-### E2E Tests (23 tests)
-```
-Results: 23 passed, 0 failed
-ALL TESTS PASSED
-```
-
-Key test: `malformed.yaml is not misreported as InvalidId` ✅
-
-### Unit Tests (60 tests)
-```
-test result: ok. 60 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
-```
-
-All tests pass, confirming the fix doesn't break existing functionality.
-
 ## Verification
-- ✅ Malformed YAML now only reports `MalformedYaml` errors
-- ✅ Valid YAML with schema errors still reports schema errors correctly
-- ✅ All 23 e2e tests pass
-- ✅ All 60 unit tests pass
-- ✅ No breaking changes to existing functionality
+- ✅ `--format` is rejected by clap (no silent no-op)
+- ✅ JSON output unchanged when the flag is omitted
+- ✅ Python wrapper still validates successfully (stdout is JSON)
+- ✅ All e2e tests pass
+- ✅ No breaking changes to the documented happy path (`validate --input <yaml>`)
