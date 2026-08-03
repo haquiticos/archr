@@ -12,7 +12,7 @@ if [[ "$RUNNER_OS" == "Windows" ]]; then
   # Criar arquivo de script temporário
   echo "Write-Host \"Target path: $TARGET_PATH\"" > /tmp/rename.ps1
   echo "Write-Host \"Artifact name: archr-windows-x86_64.exe\"" >> /tmp/rename.ps1
-  echo "Write-Host \"Test-Path result: $(Test-Path '$TARGET_PATH/release/archr.exe')\"" >> /tmp/rename.ps1
+  echo "[bool](Test-Path '$TARGET_PATH/release/archr.exe')" >> /tmp/rename.ps1
   echo "if (Test-Path '$TARGET_PATH/release/archr.exe') { Rename-Item -LiteralPath '$TARGET_PATH/release/archr.exe' -NewName 'archr-windows-x86_64.exe' -Force }" >> /tmp/rename.ps1
   pwsh -ExecutionPolicy Bypass -File /tmp/rename.ps1
 else
