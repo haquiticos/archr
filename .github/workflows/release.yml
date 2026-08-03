@@ -32,12 +32,5 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
       - name: Rename binary
-        shell: bash
         run: |
-          cp target/${{ matrix.target }}/release/archr* ${{ matrix.artifact }}
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ matrix.artifact }}
-          generate_release_notes: true
-          prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
+          find target/${{ matrix.target }}/release -maxdepth 1 -name "archr*" -exec mv {} ${{ matrix.artifact }} \;
