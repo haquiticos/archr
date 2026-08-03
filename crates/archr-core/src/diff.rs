@@ -146,6 +146,8 @@ impl ModelDiffAnalyzer {
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
+#[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::model::{ElementKind, Model, RelationKind};
@@ -228,7 +230,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn test_duplicate_names() {
         let existing = sample_model();
         let analyzer = ModelDiffAnalyzer::from_existing(&existing);
@@ -255,6 +256,7 @@ mod tests {
             _ => panic!("Expected DuplicateName error"),
         }
     }
+    #[test]
     fn test_empty_models() {
         let existing = Model::new("empty");
         let analyzer = ModelDiffAnalyzer::from_existing(&existing);
