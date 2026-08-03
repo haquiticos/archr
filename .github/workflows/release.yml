@@ -30,7 +30,7 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
       - name: Rename binary
-        run: bash .github/workflows/rename.sh "${{ runner.os }}" "${{ matrix.artifact }}"
+        run: bash .github/workflows/rename.sh "${{ runner.os }}" "${{ matrix.artifact }}" "target/${{ matrix.target }}"
       - uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.artifact }}
