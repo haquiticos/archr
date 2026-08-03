@@ -251,6 +251,13 @@ python3 skill/scripts/archr.py generate model.yaml --output model.archimate
 
 Set `ARCHR_BIN` to point to a custom binary location if `archr` isn't in `PATH`.
 
+## Tutorials
+
+We maintain a self-modeling tutorial series — `archr` models its own architecture as the worked example. Start with Tutorial 1; the series continues from there:
+
+- 📚 **[Tutorial 1: Getting Started](docs/tutorial/01-getting-started/README.md)** — your first ArchiMate model with archr (~30 elements: validate → generate → parse → diff).
+
+
 ## Dependencies
 
 | Crate | Purpose |
