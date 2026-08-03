@@ -8,7 +8,7 @@ TARGET_PATH="${3}"
 if [[ "$RUNNER_OS" == "Windows" ]]; then
   # PowerShell para Windows
   # Encontrar o arquivo e renomear usando PowerShell
-  pwsh -Command "Get-ChildItem -Path '$TARGET_PATH/release' -Filter 'archr*' | ForEach-Object { Rename-Item -Path \$_.FullName -NewName '$ARTIFACT_NAME' }"
+  pwsh -Command "Get-ChildItem -Path '$TARGET_PATH/release' -Filter 'archr*' | ForEach-Object { if (-not (Test-Path '$ARTIFACT_NAME')) { Rename-Item -Path \$_.FullName -NewName '$ARTIFACT_NAME' } }"
 else
   # Bash para Linux e macOS
   find "$TARGET_PATH/release" -maxdepth 1 -name "archr" -type f -exec mv {} "$ARTIFACT_NAME" \;
