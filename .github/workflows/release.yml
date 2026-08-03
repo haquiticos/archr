@@ -33,4 +33,8 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
       - name: Rename binary
         run: |
-          find target/${{ matrix.target }}/release -maxdepth 1 -name "archr*" -exec mv {} ${{ matrix.artifact }} \;
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            dir target/${{ matrix.target }}/release | findstr "archr" | awk '{print $NF}' | xargs -I {} move "target/${{ matrix.target }}/release/{}" "${{ matrix.artifact }}"
+          else
+            find target/${{ matrix.target }}/release -maxdepth 1 -name "archr*" -exec mv {} ${{ matrix.artifact }} \;
+          fi
