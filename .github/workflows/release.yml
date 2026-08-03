@@ -25,16 +25,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-      - uses: swatinem/rust-cache@v2
+      - name: Set permissions for rename script
+        run: chmod +x .github/workflows/rename.sh
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
       - name: Rename binary
-        run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            dir target/${{ matrix.target }}/release | findstr "archr" | awk '{print $NF}' | xargs -I {} move "target/${{ matrix.target }}/release/{}" "${{ matrix.artifact }}"
-          else
-            find target/${{ matrix.target }}/release -maxdepth 1 -name "archr*" -exec mv {} ${{ matrix.artifact }} \;
-          fi
+        run: bash .github/workflows/rename.sh
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact }}
+          generate_release_notes: true
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
