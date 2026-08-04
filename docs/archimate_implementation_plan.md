@@ -78,7 +78,7 @@ Relationship { id: RelationId, source: ElementId, target: ElementId, kind: Relat
 ElementId(pub usize)       // newtype index — O(1) access in Vec
 RelationId(pub usize)       // newtype index
 
-ElementKind (61 variants) // Strategy, Business, Application, Technology, Physical, Motivation, Implementation, Other
+ElementKind (62 variants) // Strategy, Business, Application, Technology, Physical, Motivation, Implementation, Other
 RelationKind (11 variants) // Composition, Aggregation, Assignment, Realization, Serving, Access, Influence, Association, Triggering, Flow, Specialization
 
 ElementKind::layer() -> ElementLayer  // maps variant to layer (Strategy|Business|Application|Technology|Physical|Motivation|Implementation|Other)

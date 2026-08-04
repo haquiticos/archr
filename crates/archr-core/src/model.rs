@@ -24,11 +24,82 @@ pub enum ElementLayer {
     Other,
 }
 
+impl ElementLayer {
+    /// Returns all `ElementKind`s belonging to this layer, in canonical order.
+    ///
+    /// Mirrors Archi's `CONCEPTS_MAP` layer collections
+    /// (`ArchimateModelUtils.get*Classes()`) — the building blocks for viewpoint
+    /// element filters (`$BusinessElements$`, `$ApplicationElements$`, ...).
+    pub fn elements(self) -> &'static [ElementKind] {
+        use ElementKind::*;
+        use ElementLayer::*;
+        match self {
+            Motivation => &[
+                Stakeholder,
+                Driver,
+                Assessment,
+                Goal,
+                Outcome,
+                Principle,
+                Requirement,
+                Constraint,
+                Meaning,
+                Value,
+            ],
+            Strategy => &[Resource, Capability, ValueStream, CourseOfAction],
+            Business => &[
+                BusinessActor,
+                BusinessRole,
+                BusinessCollaboration,
+                BusinessInterface,
+                BusinessProcess,
+                BusinessFunction,
+                BusinessInteraction,
+                BusinessEvent,
+                BusinessService,
+                BusinessObject,
+                Contract,
+                Representation,
+                Product,
+            ],
+            Application => &[
+                ApplicationComponent,
+                ApplicationCollaboration,
+                ApplicationInterface,
+                ApplicationFunction,
+                ApplicationInteraction,
+                ApplicationProcess,
+                ApplicationEvent,
+                ApplicationService,
+                DataObject,
+            ],
+            Technology => &[
+                Node,
+                Device,
+                SystemSoftware,
+                TechnologyCollaboration,
+                TechnologyInterface,
+                Path,
+                CommunicationNetwork,
+                TechnologyFunction,
+                TechnologyProcess,
+                TechnologyInteraction,
+                TechnologyEvent,
+                TechnologyService,
+                Artifact,
+            ],
+            Physical => &[Equipment, Facility, DistributionNetwork, Material],
+            Implementation => &[WorkPackage, Deliverable, ImplementationEvent, Plateau, Gap],
+            Other => &[Location, Grouping, AndJunction, OrJunction],
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
-// ElementKind — 61 variants (ArchiMate 3.2 complete taxonomy)
+// ElementKind — 62 variants (ArchiMate 3.2 complete taxonomy)
 // ---------------------------------------------------------------------------
 
-/// All 61 ArchiMate 3.2 element types, organized by layer.
+/// All 62 ArchiMate 3.2 element types, organized by layer.
 ///
 /// Variant names match the Open Exchange `xsi:type` attribute exactly so that
 /// (de)serialization is straightforward.
@@ -99,9 +170,10 @@ pub enum ElementKind {
     Material,
     DistributionNetwork,
 
-    // -- Implementation & Migration (4) --
+    // -- Implementation & Migration (5) --
     WorkPackage,
     Deliverable,
+    ImplementationEvent,
     Plateau,
     Gap,
 
@@ -169,7 +241,9 @@ impl ElementKind {
             Equipment | Facility | Material | DistributionNetwork => ElementLayer::Physical,
 
             // Implementation & Migration
-            WorkPackage | Deliverable | Plateau | Gap => ElementLayer::Implementation,
+            WorkPackage | Deliverable | ImplementationEvent | Plateau | Gap => {
+                ElementLayer::Implementation
+            }
 
             // Other
             Grouping | Location | AndJunction | OrJunction => ElementLayer::Other,
@@ -251,6 +325,7 @@ impl ElementKind {
             // Implementation & Migration
             "WorkPackage" => Some(WorkPackage),
             "Deliverable" => Some(Deliverable),
+            "ImplementationEvent" => Some(ImplementationEvent),
             "Plateau" => Some(Plateau),
             "Gap" => Some(Gap),
 
@@ -323,6 +398,7 @@ impl ElementKind {
             DistributionNetwork => "DistributionNetwork",
             WorkPackage => "WorkPackage",
             Deliverable => "Deliverable",
+            ImplementationEvent => "ImplementationEvent",
             Plateau => "Plateau",
             Gap => "Gap",
             Grouping => "Grouping",
@@ -333,7 +409,7 @@ impl ElementKind {
     }
 
     /// Total number of element kind variants. Compile-time constant for tests.
-    pub const VARIANT_COUNT: usize = 61;
+    pub const VARIANT_COUNT: usize = 62;
 }
 
 impl std::fmt::Display for ElementKind {
@@ -371,6 +447,154 @@ pub enum RelationKind {
     Flow,
     // Other
     Specialization,
+}
+
+/// All 25 ArchiMate 3.2 viewpoint types, as defined in the Archi viewpoints.xml.
+///
+/// Each viewpoint defines a filter over element kinds — for example,
+/// `Business` permits only Business-layer elements, while `RequirementsRealization`
+/// adds its own mixin of elements on top of the core layer filter.
+///
+/// Viewpoints map to the names used by Archi (e.g., "Business Process Cooperation").
+/// See https://github.com/Archimatetool/Archi/blob/master/com.archimatetool.model/model/viewpoints.xml
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Viewpoint {
+    // ---------------------------------------------------------------------
+    // Layer-based viewpoints (core filter)
+    // ---------------------------------------------------------------------
+    /// Motivation layer filter — only motivation elements (Stakeholder, Driver, etc.)
+    /// as defined by `$MotivationElements$` in viewpoints.xml.
+    Motivation,
+
+    /// Strategy layer filter — only strategy elements (Resource, Capability, ValueStream, etc.)
+    /// as defined by `$StrategyElements$` in viewpoints.xml.
+    Strategy,
+
+    /// Business layer filter — only business-layer elements (BusinessActor, BusinessRole, etc.)
+    /// as defined by `$BusinessElements$` in viewpoints.xml.
+    Business,
+
+    /// Application layer filter — only application-layer elements
+    /// as defined by `$ApplicationElements$` in viewpoints.xml.
+    Application,
+
+    /// Technology layer filter — only technology-layer elements
+    /// as defined by `$TechnologyElements$` in viewpoints.xml.
+    Technology,
+
+    /// Physical layer filter — only physical-layer elements
+    /// as defined by `$PhysicalElements$` in viewpoints.xml.
+    Physical,
+
+    /// Implementation & Migration layer filter — only implementation/migration elements
+    /// as defined by `$ImplementationMigrationElements$` in viewpoints.xml.
+    Implementation,
+
+    /// Other layer filter — only non-layered elements (Grouping, AndJunction, OrJunction, Location)
+    /// per Archi's "Other" viewpoint.
+    Other,
+
+    // ---------------------------------------------------------------------
+    // Special viewpoint variants (non-layer-based)
+    // ---------------------------------------------------------------------
+    /// Enterprise Structure viewpoint — combines Business + ApplicationStructure filters.
+    EnterpriseStructure,
+
+    /// Value Stream viewpoint — combines Strategy + Capability + Outcome filters.
+    ValueStream,
+
+    // ---------------------------------------------------------------------
+    // Mixin viewpoints (add extra elements to the core layer filter)
+    // ---------------------------------------------------------------------
+    /// Organization viewpoint — adds Location to Business elements.
+    Organization,
+
+    /// Business Process Cooperation viewpoint — adds extra Business + Application elements.
+    BusinessProcessCooperation,
+
+    /// Product viewpoint — adds Business + Application + Artifact + TechnologyService + Value.
+    Product,
+
+    /// Application Cooperation viewpoint — adds Location to Application elements.
+    ApplicationCooperation,
+
+    /// Application Usage viewpoint — adds Business elements to Application elements.
+    ApplicationUsage,
+
+    /// No viewpoint — the model has no viewpoint (all elements allowed, equivalent to "Layered").
+    NONE,
+}
+
+impl Viewpoint {
+    /// Parses a viewpoint name from the Archi XML format (e.g., "Business Process Cooperation").
+    pub fn from_xml_viewpoint_name(name: &str) -> Option<Self> {
+        use Viewpoint::*;
+        match name {
+            "Motivation" => Some(Motivation),
+            "Strategy" => Some(Strategy),
+            "Business" => Some(Business),
+            "Application" => Some(Application),
+            "Technology" => Some(Technology),
+            "Physical" => Some(Physical),
+            "Implementation and Deployment" => Some(Implementation),
+            "Other" => Some(Other),
+            "Layered" => Some(NONE),
+            "Enterprise Structure" => Some(EnterpriseStructure),
+            "Value Stream" => Some(ValueStream),
+            "Organization" => Some(Organization),
+            "Business Process Cooperation" => Some(BusinessProcessCooperation),
+            "Product" => Some(Product),
+            "Application Cooperation" => Some(ApplicationCooperation),
+            "Application Usage" => Some(ApplicationUsage),
+            _ => None,
+        }
+    }
+
+    /// Returns the Archi XML viewpoint name for this variant (e.g., "Business Process Cooperation").
+    pub fn to_xml_viewpoint_name(self) -> &'static str {
+        use Viewpoint::*;
+        match self {
+            Motivation => "Motivation",
+            Strategy => "Strategy",
+            Business => "Business",
+            Application => "Application",
+            Technology => "Technology",
+            Physical => "Physical",
+            Implementation => "Implementation and Deployment",
+            Other => "Other",
+            EnterpriseStructure => "Enterprise Structure",
+            ValueStream => "Value Stream",
+            Organization => "Organization",
+            BusinessProcessCooperation => "Business Process Cooperation",
+            Product => "Product",
+            ApplicationCooperation => "Application Cooperation",
+            ApplicationUsage => "Application Usage",
+            NONE => "Layered",
+        }
+    }
+
+    /// Returns the core layer filter for this viewpoint, or `None` if the viewpoint is not layer-based
+    /// (e.g., `ValueStream` or `EnterpriseStructure`).
+    pub fn layer_filter(self) -> Option<ElementLayer> {
+        use Viewpoint::*;
+        match self {
+            Motivation => Some(ElementLayer::Motivation),
+            Strategy => Some(ElementLayer::Strategy),
+            Business => Some(ElementLayer::Business),
+            Application => Some(ElementLayer::Application),
+            Technology => Some(ElementLayer::Technology),
+            Physical => Some(ElementLayer::Physical),
+            Implementation => Some(ElementLayer::Implementation),
+            Other => Some(ElementLayer::Other),
+            EnterpriseStructure | ValueStream => None,
+            Organization
+            | BusinessProcessCooperation
+            | Product
+            | ApplicationCooperation
+            | ApplicationUsage => None,
+            NONE => None,
+        }
+    }
 }
 
 impl RelationKind {
@@ -620,7 +844,7 @@ mod tests {
     #[test]
     fn element_kind_variant_count() {
         // Verify we haven't accidentally added or removed variants
-        assert_eq!(ElementKind::VARIANT_COUNT, 61);
+        assert_eq!(ElementKind::VARIANT_COUNT, 62);
     }
 
     #[test]

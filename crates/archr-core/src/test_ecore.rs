@@ -3,15 +3,17 @@
 //! The metamodel is defined in `archimate.ecore` (MIT license) and represents the
 //! authoritative definition of ArchiMate 3.2 element types and their inheritance hierarchy.
 
-use crate::model::{ElementKind, ElementLayer::*};
+use crate::ElementKind;
+use crate::ElementLayer;
+use crate::Viewpoint;
 use std::collections::HashSet;
 
 /// Collects all elements in our implementation and verifies the count matches expectations.
 #[test]
 fn test_element_kind_count() {
-    // We have 61 elements defined in ElementKind::variants()
+    // We have 62 elements defined in ElementKind::VARIANT_COUNT
     let count = ElementKind::VARIANT_COUNT;
-    assert_eq!(count, 61, "ElementKind should have 61 variants");
+    assert_eq!(count, 62, "ElementKind should have 62 variants");
 
     // Verify each variant has a layer assigned
     let elements: Vec<_> = vec![
@@ -87,14 +89,14 @@ fn test_element_kind_count() {
         assert!(
             matches!(
                 layer,
-                Motivation
-                    | Strategy
-                    | Business
-                    | Application
-                    | Technology
-                    | Physical
-                    | Implementation
-                    | Other
+                ElementLayer::Motivation
+                    | ElementLayer::Strategy
+                    | ElementLayer::Business
+                    | ElementLayer::Application
+                    | ElementLayer::Technology
+                    | ElementLayer::Physical
+                    | ElementLayer::Implementation
+                    | ElementLayer::Other
             ),
             "ElementKind::{} should have a defined layer: {:?}",
             kind.type_name(),
@@ -108,14 +110,14 @@ fn test_element_kind_count() {
 #[test]
 fn test_element_layers_are_defined() {
     let layers: HashSet<_> = vec![
-        Motivation,
-        Strategy,
-        Business,
-        Application,
-        Technology,
-        Physical,
-        Implementation,
-        Other,
+        ElementLayer::Motivation,
+        ElementLayer::Strategy,
+        ElementLayer::Business,
+        ElementLayer::Application,
+        ElementLayer::Technology,
+        ElementLayer::Physical,
+        ElementLayer::Implementation,
+        ElementLayer::Other,
     ]
     .into_iter()
     .collect();
@@ -200,34 +202,34 @@ fn test_element_layers_are_defined() {
 fn test_element_kind_layer_method() {
     // Test a representative sample of element types
     let test_cases = vec![
-        ("Stakeholder", Motivation),
-        ("Goal", Motivation),
-        ("Driver", Motivation),
-        ("Capability", Strategy),
-        ("Resource", Strategy),
-        ("ValueStream", Strategy),
-        ("BusinessActor", Business),
-        ("BusinessProcess", Business),
-        ("BusinessService", Business),
-        ("ApplicationComponent", Application),
-        ("DataObject", Application),
-        ("Node", Technology),
-        ("Device", Technology),
-        ("SystemSoftware", Technology),
-        ("CommunicationNetwork", Technology),
-        ("Artifact", Technology),
-        ("Equipment", Physical),
-        ("Facility", Physical),
-        ("Material", Physical),
-        ("DistributionNetwork", Physical),
-        ("WorkPackage", Implementation),
-        ("Deliverable", Implementation),
-        ("Plateau", Implementation),
-        ("Gap", Implementation),
-        ("Grouping", Other),
-        ("Location", Other),
-        ("AndJunction", Other),
-        ("OrJunction", Other),
+        ("Stakeholder", ElementLayer::Motivation),
+        ("Goal", ElementLayer::Motivation),
+        ("Driver", ElementLayer::Motivation),
+        ("Capability", ElementLayer::Strategy),
+        ("Resource", ElementLayer::Strategy),
+        ("ValueStream", ElementLayer::Strategy),
+        ("BusinessActor", ElementLayer::Business),
+        ("BusinessProcess", ElementLayer::Business),
+        ("BusinessService", ElementLayer::Business),
+        ("ApplicationComponent", ElementLayer::Application),
+        ("DataObject", ElementLayer::Application),
+        ("Node", ElementLayer::Technology),
+        ("Device", ElementLayer::Technology),
+        ("SystemSoftware", ElementLayer::Technology),
+        ("CommunicationNetwork", ElementLayer::Technology),
+        ("Artifact", ElementLayer::Technology),
+        ("Equipment", ElementLayer::Physical),
+        ("Facility", ElementLayer::Physical),
+        ("Material", ElementLayer::Physical),
+        ("DistributionNetwork", ElementLayer::Physical),
+        ("WorkPackage", ElementLayer::Implementation),
+        ("Deliverable", ElementLayer::Implementation),
+        ("Plateau", ElementLayer::Implementation),
+        ("Gap", ElementLayer::Implementation),
+        ("Grouping", ElementLayer::Other),
+        ("Location", ElementLayer::Other),
+        ("AndJunction", ElementLayer::Other),
+        ("OrJunction", ElementLayer::Other),
     ];
 
     for (type_name, expected_layer) in test_cases {
@@ -352,4 +354,205 @@ fn test_element_kind_type_names() {
             name,
         );
     }
+}
+
+/// Verifies `Viewpoint::from_xml_viewpoint_name()` correctly parses all 15 Archi XML viewpoint names.
+#[test]
+fn test_viewpoint_from_xml_viewpoint_name() {
+    // Layer-based viewpoints
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Motivation"),
+        Some(Viewpoint::Motivation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Strategy"),
+        Some(Viewpoint::Strategy)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Business"),
+        Some(Viewpoint::Business)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Application"),
+        Some(Viewpoint::Application)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Technology"),
+        Some(Viewpoint::Technology)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Physical"),
+        Some(Viewpoint::Physical)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Implementation and Deployment"),
+        Some(Viewpoint::Implementation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Physical"),
+        Some(Viewpoint::Physical)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Implementation and Deployment"),
+        Some(Viewpoint::Implementation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Layered"),
+        Some(Viewpoint::NONE)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Implementation and Deployment"),
+        Some(Viewpoint::Implementation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Layered"),
+        Some(Viewpoint::NONE)
+    );
+    // Special viewpoint variants
+
+    // Mixin viewpoints
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Enterprise Structure"),
+        Some(Viewpoint::EnterpriseStructure)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Value Stream"),
+        Some(Viewpoint::ValueStream)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Organization"),
+        Some(Viewpoint::Organization)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Business Process Cooperation"),
+        Some(Viewpoint::BusinessProcessCooperation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Product"),
+        Some(Viewpoint::Product)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Application Cooperation"),
+        Some(Viewpoint::ApplicationCooperation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Motivation"),
+        Some(Viewpoint::Motivation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Strategy"),
+        Some(Viewpoint::Strategy)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Business"),
+        Some(Viewpoint::Business)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Application"),
+        Some(Viewpoint::Application)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Technology"),
+        Some(Viewpoint::Technology)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Physical"),
+        Some(Viewpoint::Physical)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Implementation and Deployment"),
+        Some(Viewpoint::Implementation)
+    );
+    assert_eq!(
+        Viewpoint::from_xml_viewpoint_name("Layered"),
+        Some(Viewpoint::NONE)
+    );
+}
+
+/// Verifies `Viewpoint::to_xml_viewpoint_name()` round-trips correctly for all variants.
+#[test]
+fn test_viewpoint_to_xml_viewpoint_name() {
+    let variants = [
+        Viewpoint::Motivation,
+        Viewpoint::Strategy,
+        Viewpoint::Business,
+        Viewpoint::Application,
+        Viewpoint::Technology,
+        Viewpoint::Physical,
+        Viewpoint::Implementation,
+        Viewpoint::Other,
+        Viewpoint::EnterpriseStructure,
+        Viewpoint::ValueStream,
+        Viewpoint::Organization,
+        Viewpoint::BusinessProcessCooperation,
+        Viewpoint::Product,
+        Viewpoint::ApplicationCooperation,
+        Viewpoint::ApplicationUsage,
+        Viewpoint::NONE,
+    ];
+
+    for viewpoint in variants {
+        let name = viewpoint.to_xml_viewpoint_name();
+        let parsed = Viewpoint::from_xml_viewpoint_name(name);
+        assert_eq!(
+            parsed,
+            Some(viewpoint),
+            "Round-trip failed for {:?}",
+            viewpoint
+        );
+    }
+}
+
+/// Verifies `Viewpoint::layer_filter()` returns the correct layer for layer-based viewpoints and None for others.
+#[test]
+fn test_viewpoint_layer_filter() {
+    let layer_based = [
+        Viewpoint::Motivation,
+        Viewpoint::Strategy,
+        Viewpoint::Business,
+        Viewpoint::Application,
+        Viewpoint::Technology,
+        Viewpoint::Physical,
+        Viewpoint::Implementation,
+        Viewpoint::Other,
+    ];
+
+    for viewpoint in layer_based {
+        assert_eq!(
+            viewpoint.layer_filter(),
+            Some(match viewpoint {
+                Viewpoint::Motivation => ElementLayer::Motivation,
+                Viewpoint::Strategy => ElementLayer::Strategy,
+                Viewpoint::Business => ElementLayer::Business,
+                Viewpoint::Application => ElementLayer::Application,
+                Viewpoint::Technology => ElementLayer::Technology,
+                Viewpoint::Physical => ElementLayer::Physical,
+                Viewpoint::Implementation => ElementLayer::Implementation,
+                Viewpoint::Other => ElementLayer::Other,
+                _ => unreachable!(),
+            }),
+            "layer_filter() should return Some for layer-based viewpoints"
+        );
+    }
+
+    // Mixin viewpoints should return None
+    let mixins = [
+        Viewpoint::EnterpriseStructure,
+        Viewpoint::ValueStream,
+        Viewpoint::Organization,
+        Viewpoint::BusinessProcessCooperation,
+        Viewpoint::Product,
+        Viewpoint::ApplicationCooperation,
+        Viewpoint::ApplicationUsage,
+    ];
+    for viewpoint in mixins {
+        assert_eq!(
+            viewpoint.layer_filter(),
+            None,
+            "layer_filter() should return None for mixin viewpoints"
+        );
+    }
+
+    // NONE should return None
+    assert_eq!(Viewpoint::NONE.layer_filter(), None);
 }

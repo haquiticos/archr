@@ -9,7 +9,7 @@ with ArchiMate 3.2.
 **Compatibility guarantees:**
 - `archr` emits XML in Archi native format (namespace:
   `http://www.archimatetool.com/archimate`, version `5.0.0`)
-- `archr` uses the same 8 layers and 61 element types as ArchiMate 3.2
+- `archr` uses the same 8 layers and 62 element types as ArchiMate 3.2
 - `archr` implements 11 relationship types with derivability rules
   defined in `validate.rs::ALLOWED` (203 triples)
 

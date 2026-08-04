@@ -6,7 +6,7 @@ archr's Rust source code at **[docs/SPEC.md](../docs/SPEC.md)**.
 ## Quick Reference
 
 - **Layers:** 8 (Motivation, Strategy, Business, Application, Technology, Physical, Implementation, Other)
-- **Elements:** 61
+- **Elements:** 62
 - **Relationships:** 11 (Composition, Aggregation, Assignment, Realization, Serving, Access, Influence, Association, Triggering, Flow, Specialization)
 - **Derivability matrix:** 203 `(source_layer, relation_kind, target_layer)` triples in `validate.rs::ALLOWED`
 

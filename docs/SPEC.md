@@ -10,7 +10,7 @@
 
 ## Element Layers
 
-The `archr` engine implements **8** layers as defined in ArchiMate 3.2, totalling **61** element kinds.
+The `archr` engine implements **8** layers as defined in ArchiMate 3.2, totalling **62** element kinds.
 
 ### Motivation Layer (10 elements)
 
@@ -83,10 +83,11 @@ The `archr` engine implements **8** layers as defined in ArchiMate 3.2, totallin
 - `Material`
 - `DistributionNetwork`
 
-### Implementation & Migration Layer (4 elements)
+### Implementation & Migration Layer (5 elements)
 
 - `WorkPackage`
 - `Deliverable`
+- `ImplementationEvent`
 - `Plateau`
 - `Gap`
 
@@ -446,7 +447,7 @@ Same layer only
 
 ### Element & Relationship Counts
 
-- Total Elements: **61** (matches `ElementKind::VARIANT_COUNT = 61`)
+- Total Elements: **62** (matches `ElementKind::VARIANT_COUNT = 62`)
 - Total Layers: **8**
 - Total Relationships: **11** (matches `RelationKind::VARIANT_COUNT = 11`)
 - `ALLOWED` matrix size: **203** triples
