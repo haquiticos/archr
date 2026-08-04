@@ -1,0 +1,13 @@
+{
+  "name": "archr-docs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "docusaurus build",
+    "start": "docusaurus start"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.5.2",
+    "@docusaurus/preset-classic": "^3.5.2"
+  }
+}
