@@ -26,11 +26,12 @@ You'll learn:
 ### Usage
 
 ```bash
-archr diff --old model_v1.yaml --new model_v2.yaml
+archr diff --old model_v1.archimate --new model_v2.yaml
 ```
 
 **Requirements**:
-- Both files must be valid YAML (or valid XML).
+- --old must be a valid ArchiMate 3.0 XML file.
+- --new must be a valid YAML file.
 - `diff` parses the models into a canonical internal representation and then prints:
   - Added elements/relationships
   - Removed elements/relationships
@@ -38,7 +39,7 @@ archr diff --old model_v1.yaml --new model_v2.yaml
 
 ### Example
 
-Assume `model_v1.yaml` is a "wrong" model (with the Serving bug):
+Assume `model_v1.archimate` is a "wrong" model (with the Serving bug):
 
 ```yaml
 model:
@@ -60,7 +61,7 @@ model:
       kind: Serving          # ← BUG: Serving cannot descend from Implementation to Application
 ```
 
-Now let `model_v2.yaml` be a "fixed" model:
+Now let `model_v2.yaml` be a "fixed" model (YAML):
 
 ```yaml
 model:
@@ -85,7 +86,7 @@ model:
 Run diff:
 
 ```bash
-archr diff --old model_v1.yaml --new model_v2.yaml
+archr diff --old model_v1.archimate --new model_v2.yaml
 ```
 
 Output (simplified):
@@ -289,7 +290,7 @@ Use a same-layer valid relationship instead:
 
 ```bash
 export ARCHR_BIN=/path/to/archr
-archr diff --old model_v1.yaml --new model_v2.yaml
+archr diff --old model_v1.archimate --new model_v2.yaml
 ```
 
 ### `diff` reports empty set of differences
