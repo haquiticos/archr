@@ -80,7 +80,7 @@ def extract_layer_mapping() -> Tuple[Dict[str, List[str]], int]:
     src = _read(MODEL_RS)
     m = re.search(
         r"pub const fn layer\(self\) -> ElementLayer \{(.+?)\n    \}",
-        src, re.S,
+        src, re.DOTALL,
     )
     if not m:
         raise RuntimeError("Could not locate ElementKind::layer() in model.rs")
@@ -88,14 +88,13 @@ def extract_layer_mapping() -> Tuple[Dict[str, List[str]], int]:
 
     # Each clause: `// Optional comment\n <variants> => ElementLayer::Name,`
     clause = re.compile(
-        r"(?://\s*([^\n]+)\n)?\s*([A-Za-z][\w\s|]*?)\s*=>\s*ElementLayer::(\w+)",
-        re.M,
+        r"(?://\s*([^\n]+)\n)?\s*([A-Za-z][\w\s|{}]+)\s*=>\s*(?:ElementLayer::(\w+)|\{[^}]*\})",        re.M,
     )
 
     layers: Dict[str, List[str]] = defaultdict(list)
     seen: Set[str] = set()
     for mo in clause.finditer(body):
-        variants_blob, layer = mo.group(2), mo.group(3)
+        variants_blob, layer = mo.group(2), mo.group(3) or "Implementation"
         for name in variants_blob.split("|"):
             name = name.strip()
             if not name:
