@@ -25,10 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - run: npm install
-        working-directory: docs/book
-      - run: npm run build
-        working-directory: docs/book
+      - run: cd docs/book && npm install
+      - run: cd docs/book && npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
