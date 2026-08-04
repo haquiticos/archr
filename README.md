@@ -18,7 +18,7 @@ A headless Rust engine for ArchiMate 3.2 — validate, manipulate, and export ar
 
 ## Features
 
-- **Validate** ArchiMate 3.2 models against the full derivability ruleset (61 element types, 11 relationship types, 8 layers)
+- **Validate** ArchiMate 3.2 models against the full derivability ruleset (62 element types, 11 relationship types, 8 layers)
 - **Generate** Open Exchange XML (`.archimate`) from human-friendly YAML
 - **Parse** existing `.archimate` XML back into YAML
 - **Diff** two models to detect added, removed, and modified elements
@@ -194,7 +194,7 @@ archr/
 │       ├── Cargo.toml
 │       └── src/
 │           ├── lib.rs            # Module re-exports
-│           ├── model.rs          # Arena-based graph (61 element + 11 relation types)
+│           ├── model.rs          # Arena-based graph (62 element + 11 relation types)
 │           ├── main.rs           # clap CLI (validate/generate/parse/diff)
 │           ├── validate.rs       # Data-driven derivability matrix
 │           ├── diff.rs           # Model diff by element name
