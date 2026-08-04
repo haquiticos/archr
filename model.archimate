@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="Simple Model" id="878ecc3d-6795-4ec2-9656-e29b1e6a7f33" version="5.0.0">
+  <folder name="Business" id="d934cb0b-d004-4c55-8a1c-95c1e3537eae" type="business">
+    <element xsi:type="archimate:BusinessActor" name="Customer" id="actor_001"/>
+    <element xsi:type="archimate:BusinessFunction" name="Create Order" id="fn_001"/>
+  </folder>
+  <folder name="Application" id="a8b2d371-7f1d-4ce0-b0ef-b1c90f10b088" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Order Processing" id="app_001"/>
+  </folder>
+  <folder name="Relations" id="d77579f4-5358-4932-9d5f-e07e85335bff" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" source="actor_001" target="fn_001" id="rel_001"/>
+    <element xsi:type="archimate:RealizationRelationship" source="app_001" target="fn_001" id="rel_002"/>
+  </folder>
+  <folder name="Views" id="6a91dc6e-1999-407a-86c6-a70c897a7df6" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Default View" id="c2f0f6a9-07b6-4929-9fdf-46472ca78c3c">
+      <child xsi:type="archimate:DiagramObject" id="2fe254ce-2c3a-4096-bf26-dda4ac57ae1b" archimateElementRef="actor_001">
+        <bounds x="0" y="0" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="2f1a514d-7c06-4fce-834a-edd4ca0d2780" source="2fe254ce-2c3a-4096-bf26-dda4ac57ae1b" target="4642dd3a-55f0-4cc8-813f-8b0b19751ea2" archimateRelationshipRef="rel_001"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="7e67dc94-efdd-4d08-bff3-5cdcb3b833ef" archimateElementRef="app_001">
+        <bounds x="0" y="0" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="980a468f-8273-4d37-b779-cc2e0b833213" source="7e67dc94-efdd-4d08-bff3-5cdcb3b833ef" target="4642dd3a-55f0-4cc8-813f-8b0b19751ea2" archimateRelationshipRef="rel_002"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="4642dd3a-55f0-4cc8-813f-8b0b19751ea2" archimateElementRef="fn_001">
+        <bounds x="0" y="120" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

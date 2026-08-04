@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="Wrong Model" id="cd0d3a64-de62-4537-94b6-d2ab5a3d6eb7" version="5.0.0">
+  <folder name="Application" id="d2ae559f-fdeb-4b2a-8d42-3ba6eabc4d4b" type="application">
+    <element xsi:type="archimate:ApplicationService" name="Validate CLI" id="svc_001"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="17e1d207-8aa7-4ce2-bcc9-81414a114ed4" type="implementation_migration">
+    <element xsi:type="archimate:WorkPackage" name="archr v1.0.0 Release" id="wp_001"/>
+  </folder>
+  <folder name="Relations" id="5e7e7b6f-ac7d-47cc-a00f-53f5c9083ae9" type="relations">
+    <element xsi:type="archimate:ServingRelationship" source="wp_001" target="svc_001" id="rel_wrong"/>
+  </folder>
+  <folder name="Views" id="fd26d027-48ac-4abf-a3a8-2b400772ab88" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Default View" id="ce58d571-0e14-47e7-8644-0f49ee249dc2">
+      <child xsi:type="archimate:DiagramObject" id="a86478d2-63a5-4f50-ab12-447a4f492a6c" archimateElementRef="wp_001">
+        <bounds x="0" y="0" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="59413c7b-bfc3-4065-a8af-0f97c835772a" source="a86478d2-63a5-4f50-ab12-447a4f492a6c" target="0eb85f85-0399-48c5-9f52-00317a650ed8" archimateRelationshipRef="rel_wrong"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="0eb85f85-0399-48c5-9f52-00317a650ed8" archimateElementRef="svc_001">
+        <bounds x="0" y="120" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>

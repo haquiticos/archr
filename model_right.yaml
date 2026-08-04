@@ -1,0 +1,14 @@
+model:
+  name: Right Model
+  elements:
+    - id: wp_001
+      name: archr v1.0.0 Release
+      kind: WorkPackage
+    - id: svc_001
+      name: Validate CLI
+      kind: ApplicationService
+  relationships:
+    - id: rel_wrong
+      source: wp_001
+      target: svc_001
+      kind: Realization

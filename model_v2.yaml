@@ -1,0 +1,14 @@
+model:
+  name: Version 2
+  elements:
+    - id: wp_001
+      name: archr v1.0.0 Release
+      kind: WorkPackage
+    - id: app_001
+      name: New Module
+      kind: ApplicationComponent
+  relationships:
+    - id: rel_001
+      source: wp_001
+      target: app_001
+      kind: Realization
