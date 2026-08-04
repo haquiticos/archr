@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="Bug Demonstration" id="931658a7-ab42-4259-afa2-a601cc41bf94" version="5.0.0">
+  <folder name="Application" id="686968d9-f405-4994-a21d-2377f8f20a0f" type="application">
+    <element xsi:type="archimate:ApplicationService" name="Validate CLI" id="svc_001"/>
+    <element xsi:type="archimate:ApplicationComponent" name="Validate Module" id="app_002"/>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="8bb51df1-636c-429f-b3f2-0f51e66a85ef" type="implementation_migration">
+    <element xsi:type="archimate:WorkPackage" name="archr v1.0.0 Release" id="wp_001"/>
+  </folder>
+  <folder name="Relations" id="f21bc903-5e4d-48cb-930b-250f88fb7381" type="relations">
+    <element xsi:type="archimate:ServingRelationship" source="wp_001" target="svc_001" id="rel_wrong"/>
+  </folder>
+  <folder name="Views" id="b78c4909-ec1d-4347-8365-d95a4800a304" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Default View" id="01694b0a-6c60-4431-b81e-d0a70baf7cc8">
+      <child xsi:type="archimate:DiagramObject" id="8cc05c63-628e-47a8-848e-21727720ac09" archimateElementRef="wp_001">
+        <bounds x="0" y="0" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="3afbde80-7149-43b8-b989-0ee686bfe813" source="8cc05c63-628e-47a8-848e-21727720ac09" target="330fa953-d220-4c0f-8792-1a8a9ecf941c" archimateRelationshipRef="rel_wrong"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="93c24dc3-5341-4ee9-b026-a0f908224912" archimateElementRef="app_002">
+        <bounds x="600" y="0" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="330fa953-d220-4c0f-8792-1a8a9ecf941c" archimateElementRef="svc_001">
+        <bounds x="0" y="120" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>
