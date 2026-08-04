@@ -25,32 +25,30 @@ A headless Rust engine for ArchiMate 3.2 — validate, manipulate, and export ar
 - **Automatic layout** — grid placement by topological layer (no Sugiyama)
 - **Agent Skill** — PEP 723 Python wrapper for Claude Code, Copilot, and Codex
 
+## Documentation
+
+Full documentation, including installation, upgrade, CLI reference, and guides is available at [haquiticos.github.io/archr](https://haquiticos.github.io/archr).
+
 ## Installation
 
-### Prebuilt Binary (Recommended)
+**Docs:** [haquiticos.github.io/archr](https://haquiticos.github.io/archr) — full installation, upgrade, and uninstall guide.
 
-Download the latest release from [GitHub Releases](https://github.com/haquiticos/archr/releases) and run:
+### Install script (macOS & Linux)
 
-#### Linux (x86_64)
 ```bash
-./archr-linux-x86_64 --version
+curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash
 ```
 
-#### macOS (Intel)
+Pin a version:
+
 ```bash
-chmod +x archr-macos-x86_64
-./archr-macos-x86_64 --version
+curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v1.0.0"
 ```
 
-#### macOS (Apple Silicon)
-```bash
-chmod +x archr-macos-arm64
-./archr-macos-arm64 --version
-```
+### Install script (Windows)
 
-#### Windows (x86_64)
-```bash
-archr-windows-x86_64.exe --version
+```powershell
+powershell -c "irm https://raw.githubusercontent.com/haquiticos/archr/main/install/install.ps1 | iex"
 ```
 
 ### Cargo Install
@@ -63,19 +61,17 @@ archr --version
 ### Build from Source
 
 ```bash
-# Clone the repository
 git clone https://github.com/haquiticos/archr.git
 cd archr
-
-# Build for all targets
-cargo build --release --target x86_64-unknown-linux-gnu
-cargo build --release --target x86_64-pc-windows-msvc
-cargo build --release --target x86_64-apple-darwin
-cargo build --release --target aarch64-apple-darwin
-
-# Binaries are in target/{target}/release/
-```
+cargo build --release
 # Binary at target/release/archr
+```
+
+### Verify
+
+```bash
+archr --version
+# archr 1.0.0
 ```
 
 ### Define a model (YAML)
@@ -251,11 +247,6 @@ python3 skill/scripts/archr.py generate model.yaml --output model.archimate
 
 Set `ARCHR_BIN` to point to a custom binary location if `archr` isn't in `PATH`.
 
-## Tutorials
-
-We maintain a self-modeling tutorial series — `archr` models its own architecture as the worked example. Start with Tutorial 1; the series continues from there:
-
-- 📚 **[Tutorial 1: Getting Started](docs/tutorial/01-getting-started/README.md)** — your first ArchiMate model with archr (~30 elements: validate → generate → parse → diff).
 
 
 ## Dependencies
