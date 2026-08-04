@@ -1,232 +1,184 @@
-# Tutorial 1: Getting Started
+# Tutorial 1: Getting Started — Self-Modeling archr
 
-**Self-Modeling Series**: `archr` models its own architecture as the worked example.
+**Part of the Self-Modeling series** — teaches you to model archr's own architecture using omp and the archr skill.
 
-**Estimated Time**: 30 minutes
+Estimated time: 30 minutes
 
-**Prerequisites**:
-- Complete [Shared Setup](../shared/01-setup.md) (install `archr`, verify version)
+## Prerequisites
 
-**Overview**:
-Your first ArchiMate model with archr. You'll create a simple model (~30 elements), validate it, generate XML, parse it back, and use diff to detect changes.
+Complete [Shared Setup](../shared/01-setup.md) before starting:
+- Install the `archr` binary (one of the three installation options)
+- Install omp (https://omp.sh/)
+- Install the archr skill via `bash skill/install.sh`
 
-## Table of Contents
+## Overview
 
-1. [Introduction](#introduction)
-2. [Create Your First Model](#create-your-first-model)
-3. [Validate the Model](#validate-the-model)
-4. [Generate Open Exchange XML](#generate-open-exchange-xml)
-5. [Parse XML Back to YAML](#parse-xml-back-to-yaml)
-6. [Diff Two Models](#diff-two-models)
-7. [Next Steps](#next-steps)
+This tutorial runs **omp** inside the archr repository. The agent, using the loaded archr skill, will:
+1. Read `crates/archr-core/src/` to understand the codebase
+2. Draft a self-model `model.yaml` following the skill's YAML schema
+3. Run the skill's `validate` and iterate on JSON errors until validation passes (`{"success": true, "errors": []}`)
 
-## Introduction
+The YAML is **agent-generated**, not hand-written. Success is measured by the validate JSON, not by matching a reference file.
 
-This tutorial demonstrates the full workflow of archr: from YAML specification to validated, rendered models. You'll build a small subsystem of archr itself, applying the same principles the tool uses to process its own architecture.
+## Manual primer: what validate does
 
-## Create Your First Model
+Before letting the agent do the work, run `archr validate` yourself to understand the command.
 
-Create a file named `model.yaml`:
+Create a tiny `model.yaml` (save as `model.yaml`):
 
 ```yaml
 model:
-  name: archr-subsystem
+  name: Test Architecture
   elements:
-    # Motivation layer
-    - id: goal_001
-      name: "Model Self-Architecture"
-      kind: Goal
-
-    # Business layer
     - id: actor_001
-      name: "Developer"
+      name: Customer Service
       kind: BusinessActor
-    - id: process_001
-      name: "Write YAML"
-      kind: BusinessProcess
-    - id: service_001
-      name: "Validate"
-      kind: BusinessService
-
-    # Application layer
     - id: app_001
-      name: "ArchiMate Validator"
+      name: CRM System
       kind: ApplicationComponent
-    - id: app_002
-      name: "XML Generator"
-      kind: ApplicationComponent
-    - id: app_003
-      name: "YAML Parser"
-      kind: ApplicationComponent
-
-    # Technology layer
-    - id: node_001
-      name: "Rust Engine"
-      kind: Node
-    - id: device_001
-      name: "Server"
-      kind: Device
-    - id: artifact_001
-      name: "Binary"
-      kind: Artifact
-
-    # Implementation layer
-    - id: wp_001
-      name: "Implement Validation"
-      kind: WorkPackage
-    - id: plateau_001
-      name: "Release 1.0.0"
-      kind: Plateau
-    - id: gap_001
-      name: "Enhancement Feature"
-      kind: Gap
-
+    - id: fn_001
+      name: Process Order
+      kind: BusinessFunction
   relationships:
-    # Goal to Business - use Association (any layer to any layer)
     - id: rel_001
-      source: goal_001
-      target: actor_001
-      kind: Association
-
-    # Business relationships - Assignment is same-layer only
-    - id: rel_002
       source: actor_001
-      target: process_001
-      kind: Association
-    - id: rel_003
-      source: process_001
-      target: service_001
-      kind: Realization  # Same-layer: BusinessProcess → BusinessService
-
-    # Application relationships - BusinessActor does not serve ApplicationComponent
-    # (Serving direction: Strategy ← Business ← Application ← Technology ← Physical)
-    - id: rel_004
-      source: process_001
-      target: app_001
-      kind: Association  # BusinessProcess → ApplicationComponent (different layers, use Association)
-    - id: rel_005
+      target: fn_001
+      kind: Assignment
+    - id: rel_002
       source: app_001
-      target: app_002
-      kind: Composition  # Same-layer: ApplicationComponent → ApplicationComponent
-    - id: rel_006
-      source: app_002
-      target: app_003
-      kind: Realization  # Same-layer: ApplicationComponent → ApplicationComponent
-
-    # Technology relationships - Assignment is same-layer only
-    - id: rel_007
-      source: app_003
-      target: node_001
-      kind: Access  # Application → Technology
-    - id: rel_008
-      source: node_001
-      target: device_001
-      kind: Composition  # Same-layer: Node → Device
-    - id: rel_009
-      source: node_001
-      target: artifact_001
-      kind: Realization  # Same-layer: Node → Artifact
-
-    # Implementation relationships - Assignment is same-layer only
-    - id: rel_010
-      source: process_001
-      target: wp_001
-      kind: Association  # BusinessProcess → WorkPackage (different layers, use Association)
-    - id: rel_011
-      source: wp_001
-      target: plateau_001
-      kind: Assignment  # Same-layer: WorkPackage → Plateau
-    - id: rel_012
-      source: gap_001
-      target: app_001
-      kind: Association  # Gap → ApplicationComponent (different layers, use Association)
+      target: fn_001
+      kind: Realization
 ```
 
-**Notes on the model**:
-- ArchiMate relationships have layer constraints. `Assignment`, `Composition`, `Aggregation`, `Realization` (across same layer), `Triggering`, `Flow`, and `Specialization` are same-layer-only. `Serving` descends: Technology → Application → Business → Strategy (never the reverse).
-- Cross-layer links use `Association` (or `Influence`), which are allowed between any two layers. For example, `BusinessProcess → WorkPackage` crosses Business → Implementation, so it uses `Association`, not `Assignment`.
-- The file declares 13 elements and 12 relationships — enough to exercise validate, generate, parse, and diff without any validation error.
-
-## Validate the Model
-
-Run the validator:
+Run validation:
 
 ```bash
 archr validate --input model.yaml
 ```
 
-**Expected Output**:
+If valid, you see:
+```json
+{"success": true, "errors": []}
+```
+
+Now introduce an error — change `fn_001`'s kind to an invalid name:
+
+```yaml
+kind: InvalidKind123
+```
+
+Re-run validation:
+
+```bash
+archr validate --input model.yaml
+```
+
+You'll get:
 ```json
 {
-  "success": true,
-  "errors": []
+  "success": false,
+  "errors": [
+    {
+      "code": "UnknownKind",
+      "message": "element fn_001 has invalid kind InvalidKind123",
+      "element_source": "fn_001",
+      "suggestion": "Use a valid ArchiMate 3.2 kind: BusinessActor, BusinessProcess, BusinessFunction, ApplicationComponent, ApplicationInterface, etc."
+    }
+  ]
 }
 ```
 
-Exit code `0` = valid, `1` = validation errors, `2` = I/O or malformed YAML.
+That's the format the agent will parse and fix automatically in the next section.
 
-If you see errors, check the relationship `kind` against the layer rules above — the most common mistake is using `Assignment` or `Serving` across layers.
+## Install the skill
 
-## Generate Open Exchange XML
+If you haven't already, install the archr skill so omp can discover it:
 
-Generate an `.archimate` file:
+```bash
+bash skill/install.sh          # project-level: .agents/skills/archr-skill
+# or
+bash skill/install.sh --user   # user-level:    ~/.omp/agent/skills/archr-skill
+```
+
+Confirm discovery:
+
+```bash
+read skill://archr-skill/SKILL.md
+```
+
+The output should be the contents of `skill/SKILL.md`.
+
+## Self-model with omp
+
+Run omp **inside the archr repository** (this is "passing the repo to omp" as a working directory).
+
+```bash
+omp
+```
+
+Once inside omp, give the agent the following prompt:
+
+> Using the archr skill, model archr's own architecture from `crates/archr-core/src/` into `model.yaml`, then run the skill's validate and fix every error until validation passes.
+
+### What the agent will do
+
+The agent follows the **Self-Modeling Workflow** section in `SKILL.md`:
+
+1. **Read the source** — it inspects `crates/archr-core/src/` to identify real elements:
+   - `ApplicationComponent` for each module (model, validate, io, layout, diff, cli)
+   - `ApplicationService` for each CLI subcommand (validate, generate, parse, diff)
+   - `DataObject` for the model graph, the `ALLOWED` matrix, and the YAML I/O structures
+   - `Plateau` for the current release (v1.0.0)
+   - `WorkPackage` for release deliverables
+   - `Deliverable` for the binary artifacts
+
+2. **Draft `model.yaml`** — it creates a YAML model per the schema in SKILL.md (each element needs a unique `id`, `name`, and valid `kind`; relationships need `source`, `target`, and a valid `kind`).
+
+3. **Validate** — it runs:
+   ```bash
+   python3 .agents/skills/archr-skill/scripts/archr.py validate model.yaml
+   ```
+   (or `archr validate --input model.yaml` if the binary is in PATH) and parses the JSON on stdout.
+
+4. **Fix errors iteratively** — for each error, it consults the **Derivability Rules** table in SKILL.md:
+   - `INVALID_RELATIONSHIP` — the message is `"<source> cannot <rel> <target>"`. The agent picks a valid kind for those two element layers (e.g., cross-layer `WorkPackage(Implementation) → ApplicationService(Application)` cannot be `Serving`; it switches to `Realization` or `Association`).
+   - `UnknownKind` — corrects the element/relationship `kind` to a valid ArchiMate 3.2 name.
+   - `UndefinedId` — fixes the missing `source`/`target` reference.
+   - `DuplicateId` — makes IDs unique.
+   - `InvalidId` — removes spaces or empty IDs.
+   - `MalformedYaml` — fixes YAML indentation/structure.
+
+5. **Repeat** until exit code 0 and `{"success": true, "errors": []}`.
+
+### Expected teaching moment
+
+A natural model has a release `WorkPackage` (Implementation layer) deliver the `validate` `ApplicationService` (Application layer). The obvious relation is `Serving`, but `Serving` only descends (Physical→Technology→{Application,Business}→{Strategy}). `WorkPackage Serving ApplicationService` is rejected with `INVALID_RELATIONSHIP`. The agent fixes it to `Realization` (Implementation→Application is permitted) or `Association`.
+
+You'll see the agent produce an error, then edit `model.yaml` to fix the relationship kind, re-validate, and continue until clean.
+
+### Success criterion
+
+The tutorial is complete when the agent returns:
+```json
+{"success": true, "errors": []}
+```
+
+The exit code of `archr validate --input model.yaml` is 0, and there are no errors in the JSON. No reference file is checked in; the YAML is the agent's output.
+
+## Optional: visualize
+
+Once validation passes, generate an ArchiMate diagram and open it in Archi:
 
 ```bash
 archr generate --input model.yaml --output model.archimate
 ```
 
-The generated file includes:
-- UUIDs for all elements
-- Layout coordinates (single column, topological order)
-- Default diagram view
-- Ready to import into [Archi](https://www.archimatetool.com)
+Then open `model.archimate` in [Archi](https://www.archimatetool.com) to visualize the architecture.
 
-**Note**: The layout is topological, not aesthetic. You'll see all elements stacked in a single column (`col=0`). For visually arranged diagrams, open the file in Archi and drag elements manually.
+## Next steps
 
-## Parse XML Back to YAML
-
-Parse the generated XML back to YAML:
-
-```bash
-archr parse --input model.archimate --output model_parsed.yaml
-```
-
-Compare the original and parsed files:
-
-```bash
-diff model.yaml model_parsed.yaml
-```
-
-**Expected Result**: Semantically identical. The round-trip preserves all element names, types, and relationships, though formatting (indentation, order) may differ. Comments are removed, and elements are sorted alphabetically in the parsed file. The diff will therefore show many textual changes but no semantic additions or removals.
-
-## Diff Two Models
-
-Create a modified version:
-
-```bash
-cp model.yaml model_modified.yaml
-# Edit model_modified.yaml: rename "ArchiMate Validator" to "ArchiMate Validator (NEW)"
-```
-
-Run diff:
-
-```bash
-archr diff --old model.archimate --new model_modified.yaml
-```
-
-**Expected Output**:
-```json
-{
-  "added": ["ArchiMate Validator (NEW)"],
-  "removed": ["ArchiMate Validator"],
-  "modified": []
-}
-```
-
-**Note**: `diff` compares elements by **name**, not ID. If you have duplicate element names in different subsystems, the diff may report false "no diff" when topology changes. See [issue #9](https://github.com/haquiticos/archr/issues/9) for details.
-
-## Next Steps
-
-- Continue to [Tutorial 2: Implementation and Benchmarking](../02-implementation-and-benchmark/README.md)
-- Explore the [archr Core](https://github.com/haquiticos/archr/blob/main/crates/archr-core) source
-- Try the [Agent Skill wrapper](../skill/SKILL.md)
+- Review the `model.yaml` the agent produced.
+- Read the self-modeling loop in `skill/SKILL.md` → `## Self-Modeling Workflow`.
+- Explore other tutorials in the Self-Modeling series:
+  - [Tutorial 2: Diff and Bugs](../02-diff-and-bugs/README.md)
+  - [Tutorial 3: Benchmarking](../03-benchmarking/README.md)

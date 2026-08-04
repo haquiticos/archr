@@ -127,9 +127,23 @@ python3 skill/scripts/archr.py validate model.yaml
 # Generate XML
 python3 skill/scripts/archr.py generate model.yaml --output model.archimate
 
-# Parse XML back to YAML
-python3 skill/scripts/archr.py parse --input model.archimate --output model.yaml
+# archr parse --input model.archimate --output model.yaml
+
+# Diff two models (binary-only, call archr directly)
+# archr diff --old model1.archimate --new model2.archimate
 ```
+
+## Install as an omp Agent Skill
+
+For omp (https://omp.sh/) to discover the skill, copy it into a skills root:
+
+```bash
+bash skill/install.sh          # project-level: .agents/skills/archr-skill
+bash skill/install.sh --user   # user-level:    ~/.omp/agent/skills/archr-skill
+```
+
+Confirm discovery by running omp in the repo and invoking `/skill:archr-skill`, or by
+reading `skill://archr-skill/SKILL.md`. Requires the `archr` binary in PATH (or `ARCHR_BIN`).
 
 ## Troubleshooting
 
