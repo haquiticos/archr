@@ -595,6 +595,52 @@ impl Viewpoint {
             NONE => None,
         }
     }
+    /// Parses a viewpoint name from the YAML format (e.g., "Business", "Technology").
+    pub fn from_yaml_viewpoint_name(name: &str) -> Option<Self> {
+        use Viewpoint::*;
+        match name {
+            "Motivation" => Some(Motivation),
+            "Strategy" => Some(Strategy),
+            "Business" => Some(Business),
+            "Application" => Some(Application),
+            "Technology" => Some(Technology),
+            "Physical" => Some(Physical),
+            "Implementation" => Some(Implementation),
+            "Other" => Some(Other),
+            "EnterpriseStructure" => Some(EnterpriseStructure),
+            "ValueStream" => Some(ValueStream),
+            "Organization" => Some(Organization),
+            "BusinessProcessCooperation" => Some(BusinessProcessCooperation),
+            "Product" => Some(Product),
+            "ApplicationCooperation" => Some(ApplicationCooperation),
+            "ApplicationUsage" => Some(ApplicationUsage),
+            "Layered" => Some(NONE),
+            _ => None,
+        }
+    }
+
+    /// Returns the YAML viewpoint name (e.g., "Business", "Technology").
+    pub fn to_yaml_viewpoint_name(self) -> &'static str {
+        use Viewpoint::*;
+        match self {
+            Motivation => "Motivation",
+            Strategy => "Strategy",
+            Business => "Business",
+            Application => "Application",
+            Technology => "Technology",
+            Physical => "Physical",
+            Implementation => "Implementation",
+            Other => "Other",
+            EnterpriseStructure => "EnterpriseStructure",
+            ValueStream => "ValueStream",
+            Organization => "Organization",
+            BusinessProcessCooperation => "BusinessProcessCooperation",
+            Product => "Product",
+            ApplicationCooperation => "ApplicationCooperation",
+            ApplicationUsage => "ApplicationUsage",
+            NONE => "Layered",
+        }
+    }
 }
 
 impl RelationKind {
@@ -910,4 +956,87 @@ mod tests {
         let err = RelationKind::from_str("Bogus");
         assert!(err.is_err());
     }
+    #[test]
+    fn from_yaml_viewpoint_name() {
+        let test_cases = vec![
+            ("Motivation", Some(Viewpoint::Motivation)),
+            ("Strategy", Some(Viewpoint::Strategy)),
+            ("Business", Some(Viewpoint::Business)),
+            ("Application", Some(Viewpoint::Application)),
+            ("Technology", Some(Viewpoint::Technology)),
+            ("Physical", Some(Viewpoint::Physical)),
+            ("Implementation", Some(Viewpoint::Implementation)),
+            ("Other", Some(Viewpoint::Other)),
+            ("EnterpriseStructure", Some(Viewpoint::EnterpriseStructure)),
+            ("ValueStream", Some(Viewpoint::ValueStream)),
+            ("Organization", Some(Viewpoint::Organization)),
+            ("BusinessProcessCooperation", Some(Viewpoint::BusinessProcessCooperation)),
+            ("Product", Some(Viewpoint::Product)),
+            ("ApplicationCooperation", Some(Viewpoint::ApplicationCooperation)),
+            ("ApplicationUsage", Some(Viewpoint::ApplicationUsage)),
+            ("Invalid", None),
+        ];
+
+        for (name, expected) in test_cases {
+            let result = Viewpoint::from_yaml_viewpoint_name(name);
+            assert_eq!(
+                result, expected,
+                "from_yaml_viewpoint_name(\"{}\") returned {:?}, expected {:?}",
+                name, result, expected
+            );
+        }
+    }
+
+    #[test]
+    fn to_yaml_viewpoint_name() {
+        let test_cases = vec![
+            (Viewpoint::Motivation, "Motivation"),
+            (Viewpoint::Strategy, "Strategy"),
+            (Viewpoint::Business, "Business"),
+            (Viewpoint::Application, "Application"),
+            (Viewpoint::Technology, "Technology"),
+            (Viewpoint::Physical, "Physical"),
+            (Viewpoint::Implementation, "Implementation"),
+            (Viewpoint::Other, "Other"),
+            (Viewpoint::EnterpriseStructure, "EnterpriseStructure"),
+            (Viewpoint::ValueStream, "ValueStream"),
+            (Viewpoint::Organization, "Organization"),
+            (Viewpoint::BusinessProcessCooperation, "BusinessProcessCooperation"),
+            (Viewpoint::Product, "Product"),
+            (Viewpoint::ApplicationCooperation, "ApplicationCooperation"),
+            (Viewpoint::ApplicationUsage, "ApplicationUsage"),
+            (Viewpoint::NONE, "Layered"),
+        ];
+
+        for (viewpoint, expected) in test_cases {
+            let result = viewpoint.to_yaml_viewpoint_name();
+            assert_eq!(
+                result, expected,
+                "to_yaml_viewpoint_name({:?}) returned \"{}\", expected \"{}\"",
+                viewpoint, result, expected
+            );
+        }
+    }
+
+    #[test]
+    fn roundtrip_yaml_viewpoint() {
+        let viewpoints = vec![
+            Viewpoint::Motivation,
+            Viewpoint::Strategy,
+            Viewpoint::Business,
+            Viewpoint::EnterpriseStructure,
+            Viewpoint::NONE,
+        ];
+
+        for viewpoint in viewpoints {
+            let yaml_name = viewpoint.to_yaml_viewpoint_name();
+            let parsed = Viewpoint::from_yaml_viewpoint_name(yaml_name);
+            assert_eq!(
+                parsed, Some(viewpoint),
+                "Roundtrip failed for {:?}: \"{}\" -> {:?}",
+                viewpoint, yaml_name, parsed
+            );
+        }
+    }
+
 }
