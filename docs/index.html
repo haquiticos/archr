@@ -49,13 +49,12 @@
 <section id="flow">
   <div class="wrap">
     <p class="label">the_workflow</p>
-    <h2>Stop at the command that fits.</h2>
+    <h2>Define in YAML. Then pick the command.</h2>
     <ol class="flow">
-      <li><span><b>model</b> <span class="d">— Define your architecture in human-friendly YAML.</span></span></li>
-      <li><span><b>validate</b> <span class="d">— Check every relationship against ArchiMate 3.2 derivability rules.</span></span></li>
-      <li><span><b>generate</b> <span class="d">— Export <code>.archimate</code> Open Exchange XML for Archi.</span></span></li>
-      <li><span><b>parse</b> <span class="d">— Read existing <code>.archimate</code> files back into YAML.</span></span></li>
-      <li><span><b>diff</b> <span class="d">— Diff two models; see what was added, removed, or changed.</span></span></li>
+      <li><span><b>validate</b> <span class="d">— Check every relationship against ArchiMate 3.2 derivability rules.</span><br><code>archr validate --input model.yaml</code></span></li>
+      <li><span><b>generate</b> <span class="d">— Export <code>.archimate</code> Open Exchange XML for Archi.</span><br><code>archr generate --input model.yaml --output model.archimate</code></span></li>
+      <li><span><b>parse</b> <span class="d">— Read existing <code>.archimate</code> files back into YAML.</span><br><code>archr parse --input model.archimate --output model.yaml</code></span></li>
+      <li><span><b>diff</b> <span class="d">— Diff two models; see what was added, removed, or changed.</span><br><code>archr diff --old existing.archimate --new updated.yaml</code></span></li>
     </ol>
   </div>
 </section>
