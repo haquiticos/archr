@@ -22,7 +22,7 @@
 <header>
   <div class="wrap hero">
     <img src="assets/logo-dark.svg" alt="archr logo: stacked architectural layers">
-    <h1>archr<span class="cur">&#x258B;</span></h1>
+    <h1>archr</h1>
     <p class="tag">Your model in YAML. Validated in one line.</p>
     <p class="sub"><span class="cmt">// </span>A headless Rust engine for ArchiMate 3.2 — validate, generate, parse, and diff architecture models. Built for AI agent integration.</p>
     <div class="cta">
@@ -70,19 +70,6 @@
       <div><h3>build from source</h3><code>git clone https://github.com/haquiticos/archr &amp;&amp; cd archr &amp;&amp; cargo build --release</code></div>
       <div><h3>verify</h3><code>archr --version<span class="cmt">  # archr 1.0.0</span></code></div>
     </div>
-  </div>
-</section>
-
-<section id="cli">
-  <div class="wrap">
-    <p class="label">cli</p>
-    <h2>Four commands.</h2>
-    <table>
-      <tr><td><code><span class="s">$</span> archr validate --input model.yaml</code></td><td>check model against derivability rules</td></tr>
-      <tr><td><code><span class="s">$</span> archr generate --input model.yaml --output model.archimate</code></td><td>export Open Exchange XML</td></tr>
-      <tr><td><code><span class="s">$</span> archr parse --input model.archimate --output model.yaml</code></td><td>convert XML back to YAML</td></tr>
-      <tr><td><code><span class="s">$</span> archr diff --old existing.archimate --new updated.yaml</code></td><td>see what changed</td></tr>
-    </table>
   </div>
 </section>
 
