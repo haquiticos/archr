@@ -970,9 +970,15 @@ mod tests {
             ("EnterpriseStructure", Some(Viewpoint::EnterpriseStructure)),
             ("ValueStream", Some(Viewpoint::ValueStream)),
             ("Organization", Some(Viewpoint::Organization)),
-            ("BusinessProcessCooperation", Some(Viewpoint::BusinessProcessCooperation)),
+            (
+                "BusinessProcessCooperation",
+                Some(Viewpoint::BusinessProcessCooperation),
+            ),
             ("Product", Some(Viewpoint::Product)),
-            ("ApplicationCooperation", Some(Viewpoint::ApplicationCooperation)),
+            (
+                "ApplicationCooperation",
+                Some(Viewpoint::ApplicationCooperation),
+            ),
             ("ApplicationUsage", Some(Viewpoint::ApplicationUsage)),
             ("Invalid", None),
         ];
@@ -1001,7 +1007,10 @@ mod tests {
             (Viewpoint::EnterpriseStructure, "EnterpriseStructure"),
             (Viewpoint::ValueStream, "ValueStream"),
             (Viewpoint::Organization, "Organization"),
-            (Viewpoint::BusinessProcessCooperation, "BusinessProcessCooperation"),
+            (
+                Viewpoint::BusinessProcessCooperation,
+                "BusinessProcessCooperation",
+            ),
             (Viewpoint::Product, "Product"),
             (Viewpoint::ApplicationCooperation, "ApplicationCooperation"),
             (Viewpoint::ApplicationUsage, "ApplicationUsage"),
@@ -1032,11 +1041,13 @@ mod tests {
             let yaml_name = viewpoint.to_yaml_viewpoint_name();
             let parsed = Viewpoint::from_yaml_viewpoint_name(yaml_name);
             assert_eq!(
-                parsed, Some(viewpoint),
+                parsed,
+                Some(viewpoint),
                 "Roundtrip failed for {:?}: \"{}\" -> {:?}",
-                viewpoint, yaml_name, parsed
+                viewpoint,
+                yaml_name,
+                parsed
             );
         }
     }
-
 }
