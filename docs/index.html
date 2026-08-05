@@ -39,7 +39,7 @@
     <h2>Your model in YAML. One command to check it.</h2>
     <div class="diff">
       <div class="bar"><span>model.yaml</span><span>62 types · 11 relationships · 8 layers</span></div>
-      <pre><span class="ln add">model:</span><span class="ln add">  name: My Architecture</span><span class="ln add">  elements:</span><span class="ln add">    - id: app_001</span><span class="ln add">      name: CRM</span><span class="ln add">      kind: ApplicationComponent</span><span class="ln add">  relationships:</span><span class="ln add">    - id: rel_001</span><span class="ln add">      source: actor_001</span><span class="ln add">      target: app_001</span><span class="ln add">      kind: Serving</span></pre>
+      <pre><span class="ln add">model:</span><span class="ln add">  name: CRM Architecture</span><span class="ln add">  viewpoint: Application</span><span class="ln add">  elements:</span><span class="ln add">    - id: app_001</span><span class="ln add">      name: CRM</span><span class="ln add">      kind: ApplicationComponent</span><span class="ln add">    - id: svc_001</span><span class="ln add">      name: Customer API</span><span class="ln add">      kind: ApplicationService</span><span class="ln add">  relationships:</span><span class="ln add">    - id: rel_001</span><span class="ln add">      source: app_001</span><span class="ln add">      target: svc_001</span><span class="ln add">      kind: Composition</span></pre>
     </div>
     <div class="term" style="margin-top:12px"><span class="p">$</span> archr validate model.yaml<br><span style="color:var(--grn)">{ "success": true, "errors": [] }</span></div>
     <p class="cmt" style="margin-top:14px">// exit 0 = valid, 1 = rule violation, 2 = malformed input.</p>
