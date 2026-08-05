@@ -55,7 +55,7 @@ h1{font-size:clamp(2.6rem,9vw,4.4rem);line-height:1}
   border:1px solid var(--grn);color:var(--grn);background:transparent;cursor:pointer;
   border-radius:2px;transition:background .12s,color .12s,transform .12s;text-decoration:none}
 .btn::before{content:"[ "} .btn::after{content:" ]"}
-.btn.fill{background:var(--grn);color:var(--bg);border-color:var(--grn)}
+.btn.fill{background:var(--blue);color:var(--bg);border-color:var(--grn)}
 .btn:hover{background:var(--grn);color:var(--bg);transform:translateY(-1px)}
 .btn.amber{color:var(--amber);border-color:var(--amber)}
 .btn.amber:hover{background:var(--amber);color:var(--bg)}
