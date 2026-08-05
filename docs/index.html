@@ -39,7 +39,7 @@
     <h2>Your model in YAML. One command to check it.</h2>
     <div class="diff">
       <div class="bar"><span>model.yaml</span><span>62 types · 11 relationships · 8 layers</span></div>
-      <pre><span class="ln add">model:</span><span class="ln add">  name: My Architecture</span><span class="ln add">  elements:</span><span class="ln add">    - id: app_001</span><span class="ln add">      name: CRM</span><span class="ln add">      kind: ApplicationComponent</span><span class="ln add">  relationships:</span><span class="ln add">    - id: rel_001</span><span class="ln add">      source: actor_001</span><span class="ln add">      target: app_001</span><span class="ln add">      kind: Serving</span></pre>
+      <pre><span class="ln add">model:</span><span class="ln add">  name: CRM Architecture</span><span class="ln add">  viewpoint: Application</span><span class="ln add">  elements:</span><span class="ln add">    - id: app_001</span><span class="ln add">      name: CRM</span><span class="ln add">      kind: ApplicationComponent</span><span class="ln add">    - id: svc_001</span><span class="ln add">      name: Customer API</span><span class="ln add">      kind: ApplicationService</span><span class="ln add">  relationships:</span><span class="ln add">    - id: rel_001</span><span class="ln add">      source: app_001</span><span class="ln add">      target: svc_001</span><span class="ln add">      kind: Composition</span></pre>
     </div>
     <div class="term" style="margin-top:12px"><span class="p">$</span> archr validate model.yaml<br><span style="color:var(--grn)">{ "success": true, "errors": [] }</span></div>
     <p class="cmt" style="margin-top:14px">// exit 0 = valid, 1 = rule violation, 2 = malformed input.</p>
@@ -49,13 +49,12 @@
 <section id="flow">
   <div class="wrap">
     <p class="label">the_workflow</p>
-    <h2>Stop at the command that fits.</h2>
+    <h2>Define in YAML. Then pick the command.</h2>
     <ol class="flow">
-      <li><span><b>model</b> <span class="d">— Define your architecture in human-friendly YAML.</span></span></li>
-      <li><span><b>validate</b> <span class="d">— Check every relationship against ArchiMate 3.2 derivability rules.</span></span></li>
-      <li><span><b>generate</b> <span class="d">— Export <code>.archimate</code> Open Exchange XML for Archi.</span></span></li>
-      <li><span><b>parse</b> <span class="d">— Read existing <code>.archimate</code> files back into YAML.</span></span></li>
-      <li><span><b>diff</b> <span class="d">— Diff two models; see what was added, removed, or changed.</span></span></li>
+      <li><span><b>validate</b> <span class="d">— Check every relationship against ArchiMate 3.2 derivability rules.</span><br><code>archr validate --input model.yaml</code></span></li>
+      <li><span><b>generate</b> <span class="d">— Export <code>.archimate</code> Open Exchange XML for Archi.</span><br><code>archr generate --input model.yaml --output model.archimate</code></span></li>
+      <li><span><b>parse</b> <span class="d">— Read existing <code>.archimate</code> files back into YAML.</span><br><code>archr parse --input model.archimate --output model.yaml</code></span></li>
+      <li><span><b>diff</b> <span class="d">— Diff two models; see what was added, removed, or changed.</span><br><code>archr diff --old existing.archimate --new updated.yaml</code></span></li>
     </ol>
   </div>
 </section>
@@ -105,18 +104,18 @@
   </div>
 </section>
 
-<section id="agent">
+<section id="skill">
   <div class="wrap">
     <p class="label">agent_skill</p>
-    <h2>AI agent integration. Stdlib only.</h2>
-    <div class="term"><span class="p">$</span> python3 skill/scripts/archr.py validate model.yaml</div>
+    <h2>Install. Talk to your agent. The skill does the rest.</h2>
+    <div class="term"><span class="c"># install once</span><br><span class="p">$</span> bash skill/install.sh<br><br><span class="c"># then just talk to your agent — it picks up the skill</span><br><span class="p">&gt;</span> create an ArchiMate model for a CRM system<br><span class="p">&gt;</span> validate it and export to .archimate<br><span style="color:var(--dim)">   &lt;skill atua: gera YAML, valida, exporta XML&gt;</span></div>
     <div class="others">
-      <div><h3>Claude Code</h3><code>register skill/ from the repo as an agent skill</code></div>
-      <div><h3>VS Code Copilot</h3><code>point to skill/SKILL.md</code></div>
-      <div><h3>OpenAI Codex</h3><code>import skill as a codex skill</code></div>
-      <div><h3>omp</h3><code>auto-discovered from repo root skill/</code></div>
+      <div><h3>omp</h3><code>cd archr &amp;&amp; bash skill/install.sh</code></div>
+      <div><h3>user-level</h3><code>bash skill/install.sh --user</code></div>
+      <div><h3>Claude Code</h3><code>register skill/ as an agent skill</code></div>
+      <div><h3>VS Code Copilot</h3><code>add skill/SKILL.md to your skills</code></div>
     </div>
-    <p class="cmt" style="margin-top:16px">// PEP 723 Python wrapper, self-contained, zero pip install. Set <code>ARCHR_BIN</code> for custom binary location.</p>
+    <p class="cmt" style="margin-top:16px">// triggers automatically on "archimate", "archi", "model validation", "architecture diagram".<br>// wrapper is PEP 723, stdlib only, <code>ARCHR_BIN</code> for custom binary path.</p>
   </div>
 </section>
 
