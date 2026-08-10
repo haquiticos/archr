@@ -1,17 +1,22 @@
 model:
-  name: Fixed Model
+  name: archr Architecture Model
   elements:
-    - id: wp_001
-      name: archr v1.0.0 Release
-      kind: WorkPackage
-    - id: svc_001
-      name: Validate CLI
-      kind: ApplicationService
-    - id: app_002
-      name: Validate Module
-      kind: ApplicationComponent
+    - id: e1
+      name: Driver
+      kind: Driver
+    - id: e2
+      name: Capability
+      kind: Capability
   relationships:
-    - id: rel_wrong
-      source: wp_001
-      target: svc_001
+    - id: r1
+      source: e1
+      target: e2
       kind: Realization
+  viewpoints:
+    - id: vp1
+      name: Test Viewpoint
+      kind: business
+      elements:
+        - id: e1
+          name: Driver
+          kind: Driver
