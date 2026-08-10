@@ -151,7 +151,7 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     }
 
     // Validate viewpoint elements and relationships (after global elements are created)
-    for (_vp_idx, vp_def) in viewpoints.iter().enumerate() {
+    for vp_def in viewpoints.iter() {
         // Validate viewpoint element IDs
         let mut vp_seen_ids: HashSet<String> = HashSet::new();
         for elem in &vp_def.elements {
