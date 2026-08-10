@@ -20,6 +20,30 @@ struct YamlModelInner {
     elements: Vec<YamlElement>,
     #[serde(default)]
     relationships: Vec<YamlRelationship>,
+    #[serde(default)]
+    viewpoints: Vec<YamlViewpointDefinition>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum YamlViewpointKind {
+    None,
+    Business,
+    Application,
+    Implementation,
+    Motivation,
+    Compliance,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct YamlViewpointDefinition {
+    id: String,
+    name: String,
+    kind: YamlViewpointKind,
+    #[serde(default)]
+    elements: Vec<YamlElement>,
+    #[serde(default)]
+    relationships: Vec<YamlRelationship>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,20 +60,16 @@ struct YamlRelationship {
     target: String,
     kind: String,
 }
-
 /// Schema validation errors returned during parse.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SchemaError {
+    MalformedYaml(String),
+    InvalidId,
+    DuplicateId,
     UnknownKind,
     UndefinedId,
-    DuplicateId,
-    InvalidId,
-    /// Structurally malformed YAML (bad indentation, stray characters, missing fields).
-    /// Carries the underlying serde_yaml error message for diagnostics.
-    MalformedYaml(String),
 }
-
 /// Returns a human-readable message for a `SchemaError`.
 ///
 /// Structured-data variants (`UnknownKind`, `UndefinedId`, `DuplicateId`, `InvalidId`)
@@ -82,7 +102,6 @@ pub type YamlParseResult = ParseResult<(
 pub fn parse_yaml(input: &str) -> ParseResult<Model> {
     Ok(parse_yaml_with_ids(input)?.0)
 }
-
 pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     let yaml_model: YamlModel =
         serde_yaml::from_str(input).map_err(|e| vec![SchemaError::MalformedYaml(e.to_string())])?;
@@ -91,11 +110,12 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
         name,
         elements,
         relationships,
+        viewpoints,
     } = yaml_model.model;
 
     let mut errors = Vec::new();
 
-    // Validate element IDs (empty / spaces / duplicates) and element kinds.
+    // Validate global element IDs (empty / spaces / duplicates) and element kinds.
     let mut seen_ids: HashSet<String> = HashSet::new();
     for elem in &elements {
         if elem.id.is_empty() || elem.id.contains(' ') {
@@ -108,13 +128,13 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
         }
     }
 
-    // Build id -> index map (only valid ids resolve; undefined refs flagged below).
+    // Build id -> index map for global elements (only valid ids resolve; undefined refs flagged below).
     let mut id_to_index = std::collections::HashMap::new();
     for (idx, elem) in elements.iter().enumerate() {
         id_to_index.insert(elem.id.clone(), idx);
     }
 
-    // Validate relationships: reference resolution + relation kind.
+    // Validate global relationships: reference resolution + relation kind.
     for rel in &relationships {
         if rel.id.is_empty() || rel.id.contains(' ') {
             errors.push(SchemaError::InvalidId);
@@ -130,11 +150,50 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
         }
     }
 
+    // Validate viewpoint elements and relationships (after global elements are created)
+    for (_vp_idx, vp_def) in viewpoints.iter().enumerate() {
+        // Validate viewpoint element IDs
+        let mut vp_seen_ids: HashSet<String> = HashSet::new();
+        for elem in &vp_def.elements {
+            if elem.id.is_empty() || elem.id.contains(' ') {
+                errors.push(SchemaError::InvalidId);
+            } else if !vp_seen_ids.insert(elem.id.clone()) {
+                errors.push(SchemaError::DuplicateId);
+            }
+            if ElementKind::from_name(&elem.kind).is_none() {
+                errors.push(SchemaError::UnknownKind);
+            }
+        }
+
+        // Build viewpoint element ID map (only includes elements from this viewpoint)
+        let mut vp_id_to_index = std::collections::HashMap::new();
+        for (idx, elem) in vp_def.elements.iter().enumerate() {
+            vp_id_to_index.insert(elem.id.clone(), idx);
+        }
+
+        // Validate viewpoint relationships (can reference elements from this viewpoint only)
+        for rel in &vp_def.relationships {
+            if rel.id.is_empty() || rel.id.contains(' ') {
+                errors.push(SchemaError::InvalidId);
+            }
+            // Check if source or target exists in this viewpoint's elements
+            if !vp_id_to_index.contains_key(&rel.source) {
+                errors.push(SchemaError::UndefinedId);
+            }
+            if !vp_id_to_index.contains_key(&rel.target) {
+                errors.push(SchemaError::UndefinedId);
+            }
+            if RelationKind::from_name(&rel.kind).is_none() {
+                errors.push(SchemaError::UnknownKind);
+            }
+        }
+    }
+
     if !errors.is_empty() {
         return Err(errors);
     }
 
-    // Build the Model (all prior checks guarantee success here).
+    // Build the Model with global elements (created first for viewpoints to reference)
     let mut model = Model::new(name);
     let mut elem_ids: Vec<ElementId> = Vec::with_capacity(elements.len());
     for elem in &elements {
@@ -182,12 +241,12 @@ pub fn model_to_yaml(model: &Model) -> String {
                 kind: rel.kind.to_string(),
             })
             .collect(),
+        viewpoints: Vec::new(), // No viewpoint support in current model structure
     };
 
     let yaml_model = YamlModel { model: inner };
     serde_yaml::to_string(&yaml_model).unwrap_or_else(|_| "Error".to_string())
 }
-
 /// Serialize an ArchiMate Model to YAML, optionally preserving original XML IDs.
 ///
 /// When ID mappings are provided, original string identifiers are used instead
@@ -234,12 +293,12 @@ pub fn model_to_yaml_with_ids(
                 kind: rel.kind.to_string(),
             })
             .collect(),
+        viewpoints: Vec::new(), // No viewpoint support in current model structure
     };
 
     let yaml_model = YamlModel { model: inner };
     serde_yaml::to_string(&yaml_model).unwrap_or_else(|_| "Error".to_string())
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
