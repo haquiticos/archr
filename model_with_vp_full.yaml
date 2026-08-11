@@ -1,0 +1,27 @@
+model:
+  name: archr Architecture Model
+  elements:
+    - id: e1
+      name: Test Element
+      kind: BusinessActor
+    - id: e2
+      name: Element in Viewpoint
+      kind: BusinessActor
+  relationships:
+    - id: r1
+      source: e1
+      target: e1
+      kind: Assignment
+  viewpoints:
+    - id: vp1
+      name: Test Viewpoint
+      kind: business
+      elements:
+        - id: e2
+          name: Element in Viewpoint
+          kind: BusinessActor
+      relationships:
+        - id: r2
+          source: e2
+          target: e2
+          kind: Assignment

@@ -36,29 +36,29 @@ enum YamlViewpointKind {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct YamlViewpointDefinition {
-    id: String,
-    name: String,
-    kind: YamlViewpointKind,
+pub struct YamlViewpointDefinition {
+    pub id: String,
+    pub name: String,
+    pub kind: YamlViewpointKind,
     #[serde(default)]
-    elements: Vec<YamlElement>,
+    pub elements: Vec<YamlElement>,
     #[serde(default)]
-    relationships: Vec<YamlRelationship>,
+    pub relationships: Vec<YamlRelationship>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct YamlElement {
-    id: String,
-    name: String,
-    kind: String,
+pub struct YamlElement {
+    pub id: String,
+    pub name: String,
+    pub kind: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct YamlRelationship {
-    id: String,
-    source: String,
-    target: String,
-    kind: String,
+pub struct YamlRelationship {
+    pub id: String,
+    pub source: String,
+    pub target: String,
+    pub kind: String,
 }
 /// Schema validation errors returned during parse.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -84,13 +84,15 @@ pub fn schema_error_message(error: &SchemaError) -> String {
 /// Result of YAML parsing with accumulated schema errors.
 pub type ParseResult<T> = Result<T, Vec<SchemaError>>;
 
-/// Parsed Model with original string ID mappings preserved for round-trip fidelity.
 pub type YamlParseResult = ParseResult<(
     Model,
     HashMap<String, ElementId>,
     HashMap<String, RelationId>,
+    Vec<YamlViewpointDefinition>,
+    HashMap<String, ElementId>,
+    HashMap<String, RelationId>,
 )>;
-
+/// Parsed Model with original string ID mappings preserved for round-trip fidelity.
 /// Parses YAML input into an ArchiMate Model.
 ///
 /// Returns errors if:
@@ -100,7 +102,12 @@ pub type YamlParseResult = ParseResult<(
 /// - Any element `id` is duplicated
 /// - Any `id` is empty or contains spaces
 pub fn parse_yaml(input: &str) -> ParseResult<Model> {
-    Ok(parse_yaml_with_ids(input)?.0)
+Ok(parse_yaml_with_ids(input)?.0)
+}
+
+pub fn parse_yaml_with_viewpoint_ids(input: &str) -> YamlParseResult {
+    let (model, elem_ids, rel_ids, viewpoints, vp_elem_ids, vp_rel_ids) = parse_yaml_with_ids(input)?;
+    Ok((model, elem_ids, rel_ids, viewpoints, vp_elem_ids, vp_rel_ids))
 }
 pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     let yaml_model: YamlModel =
@@ -217,7 +224,27 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
         str_to_rel.insert(rel.id.clone(), rel_id);
     }
 
-    Ok((model, str_to_elem, str_to_rel))
+    // Map viewpoint element IDs to global element IDs
+    let mut vp_str_to_elem: HashMap<String, ElementId> = HashMap::new();
+    for vp_def in viewpoints.iter() {
+        for elem in &vp_def.elements {
+            if let Some(elem_id) = str_to_elem.get(&elem.id) {
+                vp_str_to_elem.insert(elem.id.clone(), *elem_id);
+            }
+        }
+    }
+
+    // Map viewpoint relationship IDs to global relationship IDs
+    let mut vp_str_to_rel: HashMap<String, RelationId> = HashMap::new();
+    for vp_def in viewpoints.iter() {
+        for rel in &vp_def.relationships {
+            if let Some(rel_id) = str_to_rel.get(&rel.id) {
+                vp_str_to_rel.insert(rel.id.clone(), *rel_id);
+            }
+        }
+    }
+
+    Ok((model, str_to_elem, str_to_rel, viewpoints, vp_str_to_elem, vp_str_to_rel))
 }
 
 /// Serializes an ArchiMate Model back to YAML.
@@ -347,8 +374,8 @@ model:
         assert!(
             errors.contains(&SchemaError::UnknownKind),
             "expected UnknownKind in {:?}",
-            errors
-        );
+            errors)
+
     }
 
     #[test]
@@ -373,8 +400,8 @@ model:
         assert!(
             errors.contains(&SchemaError::UndefinedId),
             "expected UndefinedId in {:?}",
-            errors
-        );
+            errors)
+
     }
 
     #[test]
@@ -397,8 +424,8 @@ model:
         assert!(
             errors.contains(&SchemaError::DuplicateId),
             "expected DuplicateId in {:?}",
-            errors
-        );
+            errors)
+
     }
 
     #[test]
@@ -418,51 +445,11 @@ model:
         assert!(
             errors.contains(&SchemaError::InvalidId),
             "expected InvalidId in {:?}",
-            errors
-        );
+            errors)
+
     }
 
     #[test]
-    fn test_malformed_yaml_not_invalid_id() {
-        // Stray indentation under `name:` — structurally broken YAML, not an id bug.
-        let yaml = r#"
-model:
-  name: Malformed Model
-  elements:
-    - id: actor_001
-      name: Broken
-        kind: BusinessActor
-"#;
-
-        let result = parse_yaml(yaml);
-        assert!(result.is_err(), "expected parse failure");
-        let errors = result.unwrap_err();
-        // The fix: a malformed file must NOT surface as InvalidId.
-        assert!(
-            !errors.contains(&SchemaError::InvalidId),
-            "malformed YAML must not be reported as InvalidId: {:?}",
-            errors
-        );
-        assert!(
-            errors
-                .iter()
-                .any(|e| matches!(e, SchemaError::MalformedYaml(_))),
-            "expected a MalformedYaml error in {:?}",
-            errors
-        );
-        let malformed = errors
-            .iter()
-            .find_map(|e| match e {
-                SchemaError::MalformedYaml(msg) => Some(msg),
-                _ => None,
-            })
-            .expect("MalformedYaml present");
-        assert!(
-            !malformed.is_empty(),
-            "MalformedYaml must carry the serde message, got empty"
-        );
-    }
-
     #[test]
     fn test_round_trip() {
         let original = r#"
@@ -527,3 +514,44 @@ model:
         assert_eq!(rel.kind, RelationKind::Association);
     }
 }
+
+    #[test]
+    fn test_malformed_yaml_not_invalid_id() {
+        // Stray indentation under `name:` — structurally broken YAML, not an id bug.
+        let yaml = r#"
+model:
+  name: Malformed Model
+  elements:
+    - id: actor_001
+      name: Broken
+        kind: BusinessActor
+"#;
+
+        let result = parse_yaml(yaml);
+        assert!(result.is_err(), "expected parse failure");
+        let errors = result.unwrap_err();
+        // The fix: a malformed file must NOT surface as InvalidId.
+        assert!(
+            !errors.contains(&SchemaError::InvalidId),
+            "malformed YAML must not be reported as InvalidId: {:?}",
+            errors
+        );
+
+        assert!(
+            errors.iter().any(|e| matches!(e, SchemaError::MalformedYaml(_))),
+            "expected a MalformedYaml error in {:?}",
+            errors
+        );
+
+        let malformed = errors
+            .iter()
+            .find_map(|e| match e {
+                SchemaError::MalformedYaml(msg) => Some(msg),
+                _ => None,
+            })
+            .expect("MalformedYaml present");
+        assert!(
+            !malformed.is_empty(),
+            "MalformedYaml must carry the serde message, got empty"
+        )
+    }

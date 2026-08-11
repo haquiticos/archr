@@ -13,3 +13,28 @@ model:
       kind: "Assignment"
       source: "e1"
       target: "e2"
+  viewpoints:
+    - id: "vp1"
+      name: "Customer Service Viewpoint"
+      kind: "business"
+      elements:
+        - id: "e1"
+          name: "Customer Service"
+          kind: "BusinessRole"
+      relationships:
+        - id: "r1"
+          source: "e1"
+          target: "e2"
+          kind: "Assignment"
+    - id: "vp2"
+      name: "Service Desk Viewpoint"
+      kind: "business"
+      elements:
+        - id: "e2"
+          name: "Service Desk"
+          kind: "BusinessService"
+      relationships:
+        - id: "r1"
+          source: "e1"
+          target: "e2"
+          kind: "Assignment"
