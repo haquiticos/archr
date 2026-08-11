@@ -1,21 +1,267 @@
 model:
-  name: Simple Model
+  name: archr Architecture Model
+  
+  # -- Motivation Layer --
   elements:
-    - id: actor_001
-      name: Customer
+    - id: motivation_driver_api_first
+      name: API-First Architecture Priority
+      kind: Driver
+    - id: motivation_req_validation
+      name: Headless Validation Engine
+      kind: Requirement
+    - id: motivation_goal_ai_agents
+      name: AI Agent Integration Support
+      kind: Goal
+    - id: motivation_stakeholder_dev
+      name: Development Community
+      kind: Stakeholder
+    - id: motivation_stakeholder_arch
+      name: Architecture Practitioners
+      kind: Stakeholder
+  
+  # -- Strategy Layer --
+  elements:
+    - id: strategy_capability_validation
+      name: Architecture Model Validation
+      kind: Capability
+    - id: strategy_capability_yaml_io
+      name: YAML I/O Tools
+      kind: Capability
+    - id: strategy_resource_code
+      name: Source Code Repository
+      kind: Resource
+  
+  # -- Business Layer --
+  elements:
+    - id: business_actor_api_providers
+      name: API Service Providers
       kind: BusinessActor
-    - id: app_001
-      name: Order Processing
+    - id: business_process_validation_workflow
+      name: Model Validation Workflow
+      kind: BusinessProcess
+    - id: business_interface_yaml
+      name: YAML Interface Specification
+      kind: BusinessInterface
+  
+  # -- Application Layer --
+  elements:
+    - id: app_archr_core
+      name: Archr Core Library
       kind: ApplicationComponent
-    - id: fn_001
-      name: Create Order
-      kind: BusinessFunction
+    - id: app_archr_cli
+      name: Archr CLI
+      kind: ApplicationComponent
+    - id: app_python_wrapper
+      name: Python Agent Skill Wrapper
+      kind: ApplicationComponent
+    - id: data_yaml_schema
+      name: YAML Schema Definition
+      kind: DataObject
+    - id: data_archimate_ecore
+      name: ArchiMate Metamodel (.ecore)
+      kind: DataObject
+    - id: data_archimate_xml
+      name: Open Exchange XML Format
+      kind: DataObject
+  
+  # -- Technology Layer --
+  elements:
+    - id: tech_rust_runtime
+      name: Rust Runtime Environment
+      kind: Node
+    - id: tech_python_runtime
+      name: Python Runtime Environment
+      kind: Node
+    - id: tech_api_network
+      name: API Communication Network
+      kind: CommunicationNetwork
+    - id: tech_ci_pipeline
+      name: CI/CD Pipeline
+      kind: Node
+  
+  # -- Physical Layer --
+  elements:
+    - id: physical_build_host
+      name: Build Server
+      kind: Facility
+    - id: physical_repository
+      name: Git Repository
+      kind: Material
+  
+  # -- Implementation Layer --
+  elements:
+    - id: impl_release_v1
+      name: Version 1.0.0 Release
+      kind: WorkPackage
+    - id: impl_docs
+      name: Project Documentation
+      kind: Deliverable
+  
+  # -- Other Layer --
+  elements:
+    - id: other_license
+      name: MIT License
+      kind: Product
+
+  # -- Relationships --
   relationships:
-    - id: rel_001
-      source: actor_001
-      target: fn_001
-      kind: Assignment
-    - id: rel_002
-      source: app_001
-      target: fn_001
+    # Motivation to Strategy
+    - id: rel_motivation_driver_cap
+      source: motivation_driver_api_first
+      target: strategy_capability_validation
       kind: Realization
+    
+    # Motivation to Business
+    - id: rel_motivation_req_actor
+      source: motivation_req_validation
+      target: business_actor_api_providers
+      kind: Assignment
+    - id: rel_motivation_goal_actor
+      source: motivation_goal_ai_agents
+      target: motivation_stakeholder_dev
+      kind: Assignment
+    
+    # Strategy to Application
+    - id: rel_strategy_cap_core
+      source: strategy_capability_validation
+      target: app_archr_core
+      kind: Realization
+    - id: rel_strategy_cap_yaml_io
+      source: strategy_capability_yaml_io
+      target: app_python_wrapper
+      kind: Realization
+    
+    # Strategy to Implementation
+    - id: rel_strategy_cap_release
+      source: strategy_capability_validation
+      target: impl_release_v1
+      kind: Realization
+    
+    # Business to Application
+    - id: rel_business_process_core
+      source: business_process_validation_workflow
+      target: app_archr_core
+      kind: Realization
+    - id: rel_business_process_cli
+      source: business_process_validation_workflow
+      target: app_archr_cli
+      kind: Realization
+    - id: rel_business_interface_app
+      source: business_interface_yaml
+      target: app_archr_core
+      kind: Assignment
+    
+    # Application to Technology
+    - id: rel_app_rust_runtime
+      source: app_archr_core
+      target: tech_rust_runtime
+      kind: Serving
+    - id: rel_app_python_runtime
+      source: app_python_wrapper
+      target: tech_python_runtime
+      kind: Serving
+    - id: rel_app_api_network
+      source: app_archr_cli
+      target: tech_api_network
+      kind: Serving
+    - id: rel_app_ci_pipeline
+      source: impl_release_v1
+      target: tech_ci_pipeline
+      kind: Realization
+    
+    # Application to Business
+    - id: rel_app_api
+      source: app_archr_cli
+      target: business_actor_api_providers
+      kind: Access
+    - id: rel_app_python
+      source: app_python_wrapper
+      target: motivation_stakeholder_arch
+      kind: Access
+    
+    # Implementation to Documentation
+    - id: rel_impl_docs
+      source: impl_docs
+      target: strategy_capability_yaml_io
+      kind: Realization
+
+  # -- Viewpoints --
+  viewpoints:
+    - id: vp_api_focus
+      name: API-Centric Viewpoint
+      kind: business
+      elements:
+        - id: business_actor_api_providers
+          name: API Service Providers
+          kind: BusinessActor
+        - id: app_archr_cli
+          name: Archr CLI
+          kind: ApplicationComponent
+        - id: app_python_wrapper
+          name: Python Agent Skill Wrapper
+          kind: ApplicationComponent
+        - id: tech_api_network
+          name: API Communication Network
+          kind: CommunicationNetwork
+        - id: rel_motivation_req_actor
+          name: Validation Engine Requirement
+          kind: Requirement
+        - id: rel_app_api
+          name: CLI to API Providers
+          kind: Access
+        - id: rel_app_python
+          name: Python Wrapper to Architecture Practitioners
+          kind: Access
+      relationships:
+        - id: rel_vp_motivation_req_actor
+          source: rel_motivation_req_actor
+          target: rel_app_api
+          kind: Assignment
+        - id: rel_vp_app_api
+          source: rel_app_api
+          target: rel_motivation_req_actor
+          kind: Assignment
+
+    - id: vp_engine_focus
+      name: Engine Architecture Viewpoint
+      kind: application
+      elements:
+        - id: app_archr_core
+          name: Archr Core Library
+          kind: ApplicationComponent
+        - id: data_yaml_schema
+          name: YAML Schema Definition
+          kind: DataObject
+        - id: data_archimate_ecore
+          name: ArchiMate Metamodel (.ecore)
+          kind: DataObject
+        - id: tech_rust_runtime
+          name: Rust Runtime Environment
+          kind: Node
+        - id: tech_ci_pipeline
+          name: CI/CD Pipeline
+          kind: Node
+      relationships:
+        - id: rel_vp_strategy_cap_core
+          source: rel_strategy_cap_core
+          target: rel_vp_strategy_cap_core
+          kind: Assignment
+
+    - id: vp_release_focus
+      name: Release Management Viewpoint
+      kind: implementation
+      elements:
+        - id: impl_release_v1
+          name: Version 1.0.0 Release
+          kind: WorkPackage
+        - id: tech_ci_pipeline
+          name: CI/CD Pipeline
+          kind: Node
+        - id: impl_docs
+          name: Project Documentation
+          kind: Deliverable
+      relationships:
+        - id: rel_vp_impl_ci
+          source: rel_impl_docs
+          target: rel_vp_impl_ci
+          kind: Realization

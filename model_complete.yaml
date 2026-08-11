@@ -1,0 +1,104 @@
+model:
+  name: archr Architecture Model
+  elements:
+  - id: e1
+    name: Driver
+    kind: Driver
+  - id: e2
+    name: Requirement
+    kind: Requirement
+  - id: e3
+    name: Goal
+    kind: Goal
+  - id: e4
+    name: Capability
+    kind: Capability
+  - id: e5
+    name: BusinessActor
+    kind: BusinessActor
+  - id: e6
+    name: ApplicationComponent
+    kind: ApplicationComponent
+  - id: e7
+    name: WorkPackage
+    kind: WorkPackage
+  - id: e8
+    name: Node
+    kind: Node
+  relationships:
+  - id: r1
+    source: e1
+    target: e2
+    kind: Assignment
+  - id: r2
+    source: e2
+    target: e3
+    kind: Assignment
+  - id: r3
+    source: e4
+    target: e5
+    kind: Association
+  - id: r4
+    source: e5
+    target: e6
+    kind: Association
+  - id: r5
+    source: e6
+    target: e8
+    kind: Access
+  - id: r6
+    source: e7
+    target: e6
+    kind: Realization
+  - id: r7
+    source: e8
+    target: e6
+    kind: Serving
+  viewpoints:
+  - id: vp1
+    name: Motivation Viewpoint
+    kind: none
+    elements:
+    - id: e1
+      name: Driver
+      kind: Driver
+    - id: e2
+      name: Requirement
+      kind: Requirement
+    - id: e3
+      name: Goal
+      kind: Goal
+    relationships: []
+  - id: vp2
+    name: Motivation Layer Viewpoint
+    kind: motivation
+    elements:
+    - id: e1
+      name: Driver
+      kind: Driver
+    - id: e2
+      name: Requirement
+      kind: Requirement
+    - id: e3
+      name: Goal
+      kind: Goal
+    relationships: []
+  - id: vp3
+    name: Business Viewpoint
+    kind: business
+    elements:
+    - id: e5
+      name: BusinessActor
+      kind: BusinessActor
+    - id: e7
+      name: WorkPackage
+      kind: WorkPackage
+    relationships: []
+  - id: vp4
+    name: Application Viewpoint
+    kind: application
+    elements:
+    - id: e6
+      name: ApplicationComponent
+      kind: ApplicationComponent
+    relationships: []

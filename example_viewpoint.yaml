@@ -1,0 +1,15 @@
+model:
+  name: "Business Viewpoint Model"
+  viewpoint: business
+  elements:
+    - id: "e1"
+      name: "Customer Service"
+      kind: "BusinessRole"
+    - id: "e2"
+      name: "Service Desk"
+      kind: "BusinessService"
+  relationships:
+    - id: "r1"
+      kind: "Assignment"
+      source: "e1"
+      target: "e2"
