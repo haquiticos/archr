@@ -35,6 +35,20 @@ pub enum YamlViewpointKind {
     Compliance,
 }
 
+impl YamlViewpointKind {
+    /// Archi `viewpoint` attribute value (lowercase) for this kind.
+    pub fn as_viewpoint_name(&self) -> &'static str {
+        match self {
+            YamlViewpointKind::None => "none",
+            YamlViewpointKind::Business => "business",
+            YamlViewpointKind::Application => "application",
+            YamlViewpointKind::Implementation => "implementation",
+            YamlViewpointKind::Motivation => "motivation",
+            YamlViewpointKind::Compliance => "compliance",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YamlViewpointDefinition {
     pub id: String,
@@ -254,6 +268,10 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
             }
         }
     }
+
+    // Attach viewpoint definitions to the model so serialization can emit one
+    // diagram per viewpoint.
+    model.set_viewpoints(viewpoints.clone());
 
     Ok((
         model,
