@@ -8,6 +8,7 @@ use archr_core::{
     io::{xml, yaml},
     layout::LayoutResolver,
     validate::validate_model,
+    ElementId, RelationId,
 };
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
@@ -154,13 +155,8 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
         }
     };
 
-    let (model, elem_ids, rel_ids) = match yaml::parse_yaml_with_ids(&yaml_str) {
-        Ok(m) => m,
-        Err(errors) => {
-            eprintln!("error: schema validation failed: {:?}", errors);
-            return ExitCode::from(2);
-        }
-    };
+    let (model, elem_id_map, rel_id_map, _, _, _) = yaml::parse_yaml_with_ids(&yaml_str).unwrap();
+    let _ = None::<(HashMap<String, ElementId>, HashMap<String, RelationId>)>;
 
     // Calculate layout positions.
     let mut resolver = LayoutResolver::default();
@@ -176,7 +172,7 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
         .map(|(&id, pos)| (id, (pos.0, pos.1, 120.0, 55.0)))
         .collect::<HashMap<_, _>>();
 
-    let xml = match xml::model_to_xml(&model, &positions, Some(&elem_ids), Some(&rel_ids)) {
+    let xml = match xml::model_to_xml(&model, &positions, Some(&elem_id_map), Some(&rel_id_map)) {
         Ok(x) => x,
         Err(e) => {
             eprintln!("error: XML serialization failed: {e}");

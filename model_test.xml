@@ -1,0 +1,5 @@
+error: unexpected argument 'model.yaml' found
+
+Usage: archr generate --input <INPUT> --output <OUTPUT>
+
+For more information, try '--help'.

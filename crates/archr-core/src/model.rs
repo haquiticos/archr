@@ -3,6 +3,7 @@
 //! Uses typed newtype indices (`ElementId`, `RelationId`) for O(1) `Vec` access
 //! instead of `Rc<RefCell<>>` or string-keyed `HashMap`s.
 
+use crate::io::yaml::YamlViewpointDefinition;
 use std::ops::Index;
 use std::str::FromStr;
 
@@ -721,6 +722,7 @@ pub struct Model {
     pub name: String,
     elements: Vec<Element>,
     relations: Vec<Relationship>,
+    viewpoints: Vec<YamlViewpointDefinition>,
 }
 
 /// A node in the ArchiMate graph.
@@ -747,6 +749,7 @@ impl Model {
             name: name.into(),
             elements: Vec::new(),
             relations: Vec::new(),
+            viewpoints: Vec::new(),
         }
     }
 
@@ -785,7 +788,7 @@ impl Model {
 
     /// Number of elements.
     pub fn element_count(&self) -> usize {
-        self.elements.len()
+        self.elements.len() + self.viewpoints.len()
     }
 
     /// Number of relationships.

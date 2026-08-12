@@ -38,21 +38,21 @@ pub type XmlParseResult = Result<
 /// Serialize a Model to Archi native XML.
 ///
 /// `positions` maps element id to `(x, y, width, height)` for the diagram view.
-/// When `elem_id_map`/`rel_id_map` are provided, original string IDs are used
+/// When `_elem_id_map`/`_rel_id_map` are provided, original string IDs are used
 /// instead of fresh UUIDs, preserving identifiers across round-trip conversion.
 pub fn model_to_xml(
     model: &Model,
     positions: &HashMap<ElementId, (f64, f64, f64, f64)>,
-    elem_id_map: Option<&HashMap<String, ElementId>>,
-    rel_id_map: Option<&HashMap<String, RelationId>>,
+    _elem_id_map: Option<&HashMap<String, ElementId>>,
+    _rel_id_map: Option<&HashMap<String, RelationId>>,
 ) -> Result<String, XmlError> {
     let model_id = Uuid::new_v4();
 
     // Reverse maps for lookup by internal ID; fall back to UUIDs when no mapping.
-    let elem_rev: HashMap<&ElementId, &str> = elem_id_map
+    let elem_rev: HashMap<&ElementId, &str> = _elem_id_map
         .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
         .unwrap_or_default();
-    let rel_rev: HashMap<&RelationId, &str> = rel_id_map
+    let rel_rev: HashMap<&RelationId, &str> = _rel_id_map
         .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
         .unwrap_or_default();
 

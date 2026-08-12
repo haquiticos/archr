@@ -17,3 +17,6 @@ pub use model::ElementKind;
 pub use model::ElementLayer;
 pub use model::RelationKind;
 pub use model::Viewpoint;
+// Re-export core types
+pub use model::ElementId;
+pub use model::RelationId;

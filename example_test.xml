@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="Business Viewpoint Model" id="678bcb09-dd41-4498-9709-207ff55c1387" version="5.0.0">
+  <folder name="Business" id="9cccfcc0-8899-4519-8b19-f40fb9e0a348" type="business">
+    <element xsi:type="archimate:BusinessRole" name="Customer Service" id="e1"/>
+    <element xsi:type="archimate:BusinessService" name="Service Desk" id="e2"/>
+  </folder>
+  <folder name="Relations" id="84bff3fd-744f-408a-90a3-792f970bd443" type="relations">
+    <element xsi:type="archimate:AssignmentRelationship" source="e1" target="e2" id="r1"/>
+  </folder>
+  <folder name="Views" id="65a3cac4-b805-48f8-b213-999cc28225bd" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Default View" id="18bf98a8-d04f-454e-a079-584fd413bcef">
+      <child xsi:type="archimate:DiagramObject" id="d6cd1eac-f51c-4c62-9a86-644fca60370c" archimateElementRef="e1">
+        <bounds x="0" y="0" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="a598bf4c-8e6c-4fdc-9e8e-0beaeb249334" source="d6cd1eac-f51c-4c62-9a86-644fca60370c" target="888b9cab-3918-4074-968e-74f8ab5e3088" archimateRelationshipRef="r1"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="888b9cab-3918-4074-968e-74f8ab5e3088" archimateElementRef="e2">
+        <bounds x="0" y="120" width="120" height="55"/>
+      </child>
+    </element>
+  </folder>
+</archimate:model>
