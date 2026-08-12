@@ -1,267 +1,760 @@
 model:
-  name: archr Architecture Model
-  
-  # -- Motivation Layer --
+  name: archr Repository Self-Model
   elements:
-    - id: motivation_driver_api_first
-      name: API-First Architecture Priority
+    # --- Motivation layer ---
+    - id: driver_headless
+      name: Need for headless ArchiMate engine
       kind: Driver
-    - id: motivation_req_validation
-      name: Headless Validation Engine
-      kind: Requirement
-    - id: motivation_goal_ai_agents
-      name: AI Agent Integration Support
+    - id: goal_valid
+      name: Produce valid ArchiMate 3.2 models
       kind: Goal
-    - id: motivation_stakeholder_dev
-      name: Development Community
-      kind: Stakeholder
-    - id: motivation_stakeholder_arch
-      name: Architecture Practitioners
-      kind: Stakeholder
-  
-  # -- Strategy Layer --
-  elements:
-    - id: strategy_capability_validation
-      name: Architecture Model Validation
+    - id: req_yaml
+      name: YAML authoring interface
+      kind: Requirement
+    - id: req_xml
+      name: Open Exchange XML output
+      kind: Requirement
+    - id: req_derivability
+      name: Enforce derivability rules
+      kind: Requirement
+    - id: constraint_spec
+      name: Comply with ArchiMate 3.2 spec
+      kind: Constraint
+    - id: principle_arena
+      name: Arena-based O(1) access
+      kind: Principle
+    # --- Strategy layer ---
+    - id: cap_validation
+      name: Validation capability
       kind: Capability
-    - id: strategy_capability_yaml_io
-      name: YAML I/O Tools
+    - id: cap_generation
+      name: Generation capability
       kind: Capability
-    - id: strategy_resource_code
-      name: Source Code Repository
-      kind: Resource
-  
-  # -- Business Layer --
-  elements:
-    - id: business_actor_api_providers
-      name: API Service Providers
+    - id: cap_interop
+      name: Round-trip interop capability
+      kind: Capability
+    # --- Business layer (stakeholders) ---
+    - id: actor_org
+      name: archr Project
       kind: BusinessActor
-    - id: business_process_validation_workflow
-      name: Model Validation Workflow
-      kind: BusinessProcess
-    - id: business_interface_yaml
-      name: YAML Interface Specification
-      kind: BusinessInterface
-  
-  # -- Application Layer --
-  elements:
-    - id: app_archr_core
-      name: Archr Core Library
+    - id: role_owner
+      name: Maintainer
+      kind: BusinessRole
+    # --- Application layer: components (modules) ---
+    - id: comp_cli
+      name: archr CLI binary
       kind: ApplicationComponent
-    - id: app_archr_cli
-      name: Archr CLI
+    - id: comp_core
+      name: archr-core library
       kind: ApplicationComponent
-    - id: app_python_wrapper
-      name: Python Agent Skill Wrapper
+    - id: comp_model
+      name: Model arena
       kind: ApplicationComponent
-    - id: data_yaml_schema
-      name: YAML Schema Definition
+    - id: comp_validate
+      name: Validation engine
+      kind: ApplicationComponent
+    - id: comp_yaml
+      name: YAML I/O
+      kind: ApplicationComponent
+    - id: comp_xml
+      name: XML I/O
+      kind: ApplicationComponent
+    - id: comp_layout
+      name: Layout engine
+      kind: ApplicationComponent
+    - id: comp_diff
+      name: Diff analyzer
+      kind: ApplicationComponent
+    # --- Application layer: services (CLI commands) ---
+    - id: svc_validate
+      name: Validate
+      kind: ApplicationService
+    - id: svc_generate
+      name: Generate
+      kind: ApplicationService
+    - id: svc_parse
+      name: Parse
+      kind: ApplicationService
+    - id: svc_diff
+      name: Diff
+      kind: ApplicationService
+    # --- Application layer: functions ---
+    - id: fn_parse
+      name: YAML/XML parsing
+      kind: ApplicationFunction
+    - id: fn_serialize
+      name: YAML/XML serialization
+      kind: ApplicationFunction
+    - id: fn_layout
+      name: Grid layout
+      kind: ApplicationFunction
+    - id: fn_derive
+      name: Derivability check
+      kind: ApplicationFunction
+    - id: fn_diff
+      name: Model comparison
+      kind: ApplicationFunction
+    # --- Application layer: data objects ---
+    - id: data_model
+      name: Model graph
       kind: DataObject
-    - id: data_archimate_ecore
-      name: ArchiMate Metamodel (.ecore)
+    - id: data_matrix
+      name: ALLOWED derivability matrix
       kind: DataObject
-    - id: data_archimate_xml
-      name: Open Exchange XML Format
+    - id: data_yaml
+      name: YAML DTO
       kind: DataObject
-  
-  # -- Technology Layer --
-  elements:
-    - id: tech_rust_runtime
-      name: Rust Runtime Environment
+    - id: data_xml
+      name: Archimate XML
+      kind: DataObject
+    # --- Technology layer ---
+    - id: node_archr
+      name: archr runtime node
       kind: Node
-    - id: tech_python_runtime
-      name: Python Runtime Environment
-      kind: Node
-    - id: tech_api_network
-      name: API Communication Network
-      kind: CommunicationNetwork
-    - id: tech_ci_pipeline
-      name: CI/CD Pipeline
-      kind: Node
-  
-  # -- Physical Layer --
-  elements:
-    - id: physical_build_host
-      name: Build Server
-      kind: Facility
-    - id: physical_repository
-      name: Git Repository
-      kind: Material
-  
-  # -- Implementation Layer --
-  elements:
-    - id: impl_release_v1
-      name: Version 1.0.0 Release
+    - id: dev_rust
+      name: Rust toolchain
+      kind: Device
+    - id: sw_cargo
+      name: Cargo build system
+      kind: SystemSoftware
+    - id: art_core
+      name: archr binary artifact
+      kind: Artifact
+    - id: ts_compile
+      name: Compile service
+      kind: TechnologyService
+    # --- Implementation & Migration layer ---
+    - id: wp_release
+      name: Release 1.0.0
       kind: WorkPackage
-    - id: impl_docs
-      name: Project Documentation
+    - id: delv_bin
+      name: archr v1.0.0 binary
       kind: Deliverable
-  
-  # -- Other Layer --
-  elements:
-    - id: other_license
-      name: MIT License
-      kind: Product
-
-  # -- Relationships --
+    - id: delv_crate
+      name: archr-core crate
+      kind: Deliverable
+    - id: plateau_current
+      name: Current release v1.0.0
+      kind: Plateau
+    # --- Other ---
+    - id: loc_repo
+      name: archr-main-2 repository
+      kind: Location
   relationships:
-    # Motivation to Strategy
-    - id: rel_motivation_driver_cap
-      source: motivation_driver_api_first
-      target: strategy_capability_validation
+    # Application: CLI binary composes the core library
+    - id: r1
+      source: comp_cli
+      target: comp_core
+      kind: Composition
+    # Application: core library composes its modules
+    - id: r2
+      source: comp_core
+      target: comp_model
+      kind: Composition
+    - id: r3
+      source: comp_core
+      target: comp_validate
+      kind: Composition
+    - id: r4
+      source: comp_core
+      target: comp_yaml
+      kind: Composition
+    - id: r5
+      source: comp_core
+      target: comp_xml
+      kind: Composition
+    - id: r6
+      source: comp_core
+      target: comp_layout
+      kind: Composition
+    - id: r7
+      source: comp_core
+      target: comp_diff
+      kind: Composition
+    # Application: CLI binary realizes the user-facing services
+    - id: r8
+      source: comp_cli
+      target: svc_validate
       kind: Realization
-    
-    # Motivation to Business
-    - id: rel_motivation_req_actor
-      source: motivation_req_validation
-      target: business_actor_api_providers
+    - id: r8b
+      source: comp_cli
+      target: svc_generate
+      kind: Realization
+    - id: r8c
+      source: comp_cli
+      target: svc_parse
+      kind: Realization
+    - id: r8d
+      source: comp_cli
+      target: svc_diff
+      kind: Realization
+    # Application: components assigned to functions (same layer Assignment)
+    - id: r9
+      source: comp_validate
+      target: fn_derive
       kind: Assignment
-    - id: rel_motivation_goal_actor
-      source: motivation_goal_ai_agents
-      target: motivation_stakeholder_dev
+    - id: r10
+      source: comp_yaml
+      target: fn_parse
       kind: Assignment
-    
-    # Strategy to Application
-    - id: rel_strategy_cap_core
-      source: strategy_capability_validation
-      target: app_archr_core
-      kind: Realization
-    - id: rel_strategy_cap_yaml_io
-      source: strategy_capability_yaml_io
-      target: app_python_wrapper
-      kind: Realization
-    
-    # Strategy to Implementation
-    - id: rel_strategy_cap_release
-      source: strategy_capability_validation
-      target: impl_release_v1
-      kind: Realization
-    
-    # Business to Application
-    - id: rel_business_process_core
-      source: business_process_validation_workflow
-      target: app_archr_core
-      kind: Realization
-    - id: rel_business_process_cli
-      source: business_process_validation_workflow
-      target: app_archr_cli
-      kind: Realization
-    - id: rel_business_interface_app
-      source: business_interface_yaml
-      target: app_archr_core
+    - id: r11
+      source: comp_yaml
+      target: fn_serialize
       kind: Assignment
-    
-    # Application to Technology
-    - id: rel_app_rust_runtime
-      source: app_archr_core
-      target: tech_rust_runtime
-      kind: Serving
-    - id: rel_app_python_runtime
-      source: app_python_wrapper
-      target: tech_python_runtime
-      kind: Serving
-    - id: rel_app_api_network
-      source: app_archr_cli
-      target: tech_api_network
-      kind: Serving
-    - id: rel_app_ci_pipeline
-      source: impl_release_v1
-      target: tech_ci_pipeline
+    - id: r12
+      source: comp_xml
+      target: fn_serialize
+      kind: Assignment
+    - id: r13
+      source: comp_xml
+      target: fn_parse
+      kind: Assignment
+    - id: r14
+      source: comp_layout
+      target: fn_layout
+      kind: Assignment
+    - id: r15
+      source: comp_diff
+      target: fn_diff
+      kind: Assignment
+    # Application: functions realize services (same layer Realization)
+    - id: r16
+      source: fn_derive
+      target: svc_validate
       kind: Realization
-    
-    # Application to Business
-    - id: rel_app_api
-      source: app_archr_cli
-      target: business_actor_api_providers
+    - id: r17
+      source: fn_serialize
+      target: svc_generate
+      kind: Realization
+    - id: r18
+      source: fn_parse
+      target: svc_parse
+      kind: Realization
+    - id: r19
+      source: fn_layout
+      target: svc_generate
+      kind: Realization
+    - id: r20
+      source: fn_diff
+      target: svc_diff
+      kind: Realization
+    # Application: components access data objects (App<->App Access)
+    - id: r21
+      source: comp_model
+      target: data_model
       kind: Access
-    - id: rel_app_python
-      source: app_python_wrapper
-      target: motivation_stakeholder_arch
+    - id: r22
+      source: comp_validate
+      target: data_matrix
       kind: Access
-    
-    # Implementation to Documentation
-    - id: rel_impl_docs
-      source: impl_docs
-      target: strategy_capability_yaml_io
+    - id: r23
+      source: comp_yaml
+      target: data_yaml
+      kind: Access
+    - id: r24
+      source: comp_xml
+      target: data_xml
+      kind: Access
+    - id: r25
+      source: comp_diff
+      target: data_model
+      kind: Access
+    # Technology: hosting hierarchy (same layer Composition)
+    - id: r26
+      source: node_archr
+      target: dev_rust
+      kind: Composition
+    - id: r27
+      source: dev_rust
+      target: sw_cargo
+      kind: Composition
+    # Technology: cargo assigned to the compile service; service realizes artifact
+    - id: r28
+      source: sw_cargo
+      target: ts_compile
+      kind: Assignment
+    - id: r29
+      source: ts_compile
+      target: art_core
       kind: Realization
-
-  # -- Viewpoints --
+    # Cross-layer Serving (Technology -> Application, descending)
+    - id: r30
+      source: art_core
+      target: svc_validate
+      kind: Serving
+    - id: r31
+      source: art_core
+      target: svc_generate
+      kind: Serving
+    - id: r32
+      source: art_core
+      target: svc_parse
+      kind: Serving
+    - id: r33
+      source: art_core
+      target: svc_diff
+      kind: Serving
+    # Motivation: requirements realize the goal (same layer Realization)
+    - id: r34
+      source: req_yaml
+      target: goal_valid
+      kind: Realization
+    - id: r35
+      source: req_xml
+      target: goal_valid
+      kind: Realization
+    - id: r36
+      source: req_derivability
+      target: goal_valid
+      kind: Realization
+    - id: r37
+      source: constraint_spec
+      target: req_derivability
+      kind: Realization
+    - id: r38
+      source: principle_arena
+      target: req_yaml
+      kind: Realization
+    # Motivation: driver influences the goal (Influence, any->any)
+    - id: r39
+      source: driver_headless
+      target: goal_valid
+      kind: Influence
+    # Cross-layer Association (Motivation <-> Application)
+    - id: r40
+      source: req_yaml
+      target: comp_yaml
+      kind: Association
+    - id: r41
+      source: req_xml
+      target: comp_xml
+      kind: Association
+    - id: r42
+      source: req_derivability
+      target: comp_validate
+      kind: Association
+    - id: r43
+      source: principle_arena
+      target: comp_model
+      kind: Association
+    - id: r44
+      source: goal_valid
+      target: svc_validate
+      kind: Association
+    # Implementation: work package realizes deliverables (same layer Realization)
+    - id: r45
+      source: wp_release
+      target: delv_bin
+      kind: Realization
+    - id: r46
+      source: wp_release
+      target: delv_crate
+      kind: Realization
+    # Implementation: plateau aggregates its deliverables (same layer Aggregation)
+    - id: r47
+      source: plateau_current
+      target: delv_bin
+      kind: Aggregation
+    - id: r48
+      source: plateau_current
+      target: delv_crate
+      kind: Aggregation
+    # Cross-layer Realization (Implementation -> Application, upward, allowed)
+    - id: r49
+      source: delv_bin
+      target: svc_validate
+      kind: Realization
+    - id: r50
+      source: delv_bin
+      target: svc_generate
+      kind: Realization
+    - id: r51
+      source: delv_bin
+      target: svc_parse
+      kind: Realization
+    - id: r52
+      source: delv_bin
+      target: svc_diff
+      kind: Realization
+    - id: r53
+      source: delv_crate
+      target: comp_core
+      kind: Realization
+    # Cross-layer Serving (Application -> Strategy, ascending allowed)
+    - id: r54
+      source: svc_validate
+      target: cap_validation
+      kind: Serving
+    - id: r55
+      source: svc_generate
+      target: cap_generation
+      kind: Serving
+    - id: r56
+      source: svc_parse
+      target: cap_interop
+      kind: Serving
+    - id: r57
+      source: svc_diff
+      target: cap_interop
+      kind: Serving
+    # Cross-layer Association (Strategy <-> Motivation)
+    - id: r58
+      source: cap_validation
+      target: goal_valid
+      kind: Association
+    - id: r59
+      source: cap_generation
+      target: goal_valid
+      kind: Association
+    - id: r60
+      source: cap_interop
+      target: goal_valid
+      kind: Association
+    # Business: actor assigned to role (same layer Assignment)
+    - id: r61
+      source: actor_org
+      target: role_owner
+      kind: Assignment
+    # Cross-layer Serving (Application -> Business)
+    - id: r62
+      source: comp_cli
+      target: actor_org
+      kind: Serving
+    - id: r63
+      source: svc_validate
+      target: role_owner
+      kind: Serving
+    # Other: location associates the repository code
+    - id: r64
+      source: loc_repo
+      target: comp_core
+      kind: Association
   viewpoints:
-    - id: vp_api_focus
-      name: API-Centric Viewpoint
-      kind: business
+    - id: vp_motivation
+      name: Motivation View
+      kind: motivation
       elements:
-        - id: business_actor_api_providers
-          name: API Service Providers
-          kind: BusinessActor
-        - id: app_archr_cli
-          name: Archr CLI
-          kind: ApplicationComponent
-        - id: app_python_wrapper
-          name: Python Agent Skill Wrapper
-          kind: ApplicationComponent
-        - id: tech_api_network
-          name: API Communication Network
-          kind: CommunicationNetwork
-        - id: rel_motivation_req_actor
-          name: Validation Engine Requirement
+        - id: driver_headless
+          name: Need for headless ArchiMate engine
+          kind: Driver
+        - id: goal_valid
+          name: Produce valid ArchiMate 3.2 models
+          kind: Goal
+        - id: req_yaml
+          name: YAML authoring interface
           kind: Requirement
-        - id: rel_app_api
-          name: CLI to API Providers
-          kind: Access
-        - id: rel_app_python
-          name: Python Wrapper to Architecture Practitioners
-          kind: Access
+        - id: req_xml
+          name: Open Exchange XML output
+          kind: Requirement
+        - id: req_derivability
+          name: Enforce derivability rules
+          kind: Requirement
+        - id: constraint_spec
+          name: Comply with ArchiMate 3.2 spec
+          kind: Constraint
+        - id: principle_arena
+          name: Arena-based O(1) access
+          kind: Principle
       relationships:
-        - id: rel_vp_motivation_req_actor
-          source: rel_motivation_req_actor
-          target: rel_app_api
-          kind: Assignment
-        - id: rel_vp_app_api
-          source: rel_app_api
-          target: rel_motivation_req_actor
-          kind: Assignment
-
-    - id: vp_engine_focus
-      name: Engine Architecture Viewpoint
+        - id: r34
+          source: req_yaml
+          target: goal_valid
+          kind: Realization
+        - id: r35
+          source: req_xml
+          target: goal_valid
+          kind: Realization
+        - id: r36
+          source: req_derivability
+          target: goal_valid
+          kind: Realization
+        - id: r37
+          source: constraint_spec
+          target: req_derivability
+          kind: Realization
+        - id: r38
+          source: principle_arena
+          target: req_yaml
+          kind: Realization
+        - id: r39
+          source: driver_headless
+          target: goal_valid
+          kind: Influence
+    - id: vp_strategy
+      name: Strategy View
+      kind: none
+      elements:
+        - id: cap_validation
+          name: Validation capability
+          kind: Capability
+        - id: cap_generation
+          name: Generation capability
+          kind: Capability
+        - id: cap_interop
+          name: Round-trip interop capability
+          kind: Capability
+      relationships: []
+    - id: vp_application
+      name: Application View
       kind: application
       elements:
-        - id: app_archr_core
-          name: Archr Core Library
+        - id: comp_cli
+          name: archr CLI binary
           kind: ApplicationComponent
-        - id: data_yaml_schema
-          name: YAML Schema Definition
+        - id: comp_core
+          name: archr-core library
+          kind: ApplicationComponent
+        - id: comp_model
+          name: Model arena
+          kind: ApplicationComponent
+        - id: comp_validate
+          name: Validation engine
+          kind: ApplicationComponent
+        - id: comp_yaml
+          name: YAML I/O
+          kind: ApplicationComponent
+        - id: comp_xml
+          name: XML I/O
+          kind: ApplicationComponent
+        - id: comp_layout
+          name: Layout engine
+          kind: ApplicationComponent
+        - id: comp_diff
+          name: Diff analyzer
+          kind: ApplicationComponent
+        - id: svc_validate
+          name: Validate
+          kind: ApplicationService
+        - id: svc_generate
+          name: Generate
+          kind: ApplicationService
+        - id: svc_parse
+          name: Parse
+          kind: ApplicationService
+        - id: svc_diff
+          name: Diff
+          kind: ApplicationService
+        - id: fn_parse
+          name: YAML/XML parsing
+          kind: ApplicationFunction
+        - id: fn_serialize
+          name: YAML/XML serialization
+          kind: ApplicationFunction
+        - id: fn_layout
+          name: Grid layout
+          kind: ApplicationFunction
+        - id: fn_derive
+          name: Derivability check
+          kind: ApplicationFunction
+        - id: fn_diff
+          name: Model comparison
+          kind: ApplicationFunction
+        - id: data_model
+          name: Model graph
           kind: DataObject
-        - id: data_archimate_ecore
-          name: ArchiMate Metamodel (.ecore)
+        - id: data_matrix
+          name: ALLOWED derivability matrix
           kind: DataObject
-        - id: tech_rust_runtime
-          name: Rust Runtime Environment
-          kind: Node
-        - id: tech_ci_pipeline
-          name: CI/CD Pipeline
-          kind: Node
+        - id: data_yaml
+          name: YAML DTO
+          kind: DataObject
+        - id: data_xml
+          name: Archimate XML
+          kind: DataObject
       relationships:
-        - id: rel_vp_strategy_cap_core
-          source: rel_strategy_cap_core
-          target: rel_vp_strategy_cap_core
+        - id: r1
+          source: comp_cli
+          target: comp_core
+          kind: Composition
+        - id: r2
+          source: comp_core
+          target: comp_model
+          kind: Composition
+        - id: r3
+          source: comp_core
+          target: comp_validate
+          kind: Composition
+        - id: r4
+          source: comp_core
+          target: comp_yaml
+          kind: Composition
+        - id: r5
+          source: comp_core
+          target: comp_xml
+          kind: Composition
+        - id: r6
+          source: comp_core
+          target: comp_layout
+          kind: Composition
+        - id: r7
+          source: comp_core
+          target: comp_diff
+          kind: Composition
+        - id: r8
+          source: comp_cli
+          target: svc_validate
+          kind: Realization
+        - id: r8b
+          source: comp_cli
+          target: svc_generate
+          kind: Realization
+        - id: r8c
+          source: comp_cli
+          target: svc_parse
+          kind: Realization
+        - id: r8d
+          source: comp_cli
+          target: svc_diff
+          kind: Realization
+        - id: r9
+          source: comp_validate
+          target: fn_derive
           kind: Assignment
-
-    - id: vp_release_focus
-      name: Release Management Viewpoint
+        - id: r10
+          source: comp_yaml
+          target: fn_parse
+          kind: Assignment
+        - id: r11
+          source: comp_yaml
+          target: fn_serialize
+          kind: Assignment
+        - id: r12
+          source: comp_xml
+          target: fn_serialize
+          kind: Assignment
+        - id: r13
+          source: comp_xml
+          target: fn_parse
+          kind: Assignment
+        - id: r14
+          source: comp_layout
+          target: fn_layout
+          kind: Assignment
+        - id: r15
+          source: comp_diff
+          target: fn_diff
+          kind: Assignment
+        - id: r16
+          source: fn_derive
+          target: svc_validate
+          kind: Realization
+        - id: r17
+          source: fn_serialize
+          target: svc_generate
+          kind: Realization
+        - id: r18
+          source: fn_parse
+          target: svc_parse
+          kind: Realization
+        - id: r19
+          source: fn_layout
+          target: svc_generate
+          kind: Realization
+        - id: r20
+          source: fn_diff
+          target: svc_diff
+          kind: Realization
+        - id: r21
+          source: comp_model
+          target: data_model
+          kind: Access
+        - id: r22
+          source: comp_validate
+          target: data_matrix
+          kind: Access
+        - id: r23
+          source: comp_yaml
+          target: data_yaml
+          kind: Access
+        - id: r24
+          source: comp_xml
+          target: data_xml
+          kind: Access
+        - id: r25
+          source: comp_diff
+          target: data_model
+          kind: Access
+    - id: vp_technology
+      name: Technology View
+      kind: none
+      elements:
+        - id: node_archr
+          name: archr runtime node
+          kind: Node
+        - id: dev_rust
+          name: Rust toolchain
+          kind: Device
+        - id: sw_cargo
+          name: Cargo build system
+          kind: SystemSoftware
+        - id: art_core
+          name: archr binary artifact
+          kind: Artifact
+        - id: ts_compile
+          name: Compile service
+          kind: TechnologyService
+      relationships:
+        - id: r26
+          source: node_archr
+          target: dev_rust
+          kind: Composition
+        - id: r27
+          source: dev_rust
+          target: sw_cargo
+          kind: Composition
+        - id: r28
+          source: sw_cargo
+          target: ts_compile
+          kind: Assignment
+        - id: r29
+          source: ts_compile
+          target: art_core
+          kind: Realization
+    - id: vp_implementation
+      name: Implementation View
       kind: implementation
       elements:
-        - id: impl_release_v1
-          name: Version 1.0.0 Release
+        - id: wp_release
+          name: Release 1.0.0
           kind: WorkPackage
-        - id: tech_ci_pipeline
-          name: CI/CD Pipeline
-          kind: Node
-        - id: impl_docs
-          name: Project Documentation
+        - id: delv_bin
+          name: archr v1.0.0 binary
           kind: Deliverable
+        - id: delv_crate
+          name: archr-core crate
+          kind: Deliverable
+        - id: plateau_current
+          name: Current release v1.0.0
+          kind: Plateau
       relationships:
-        - id: rel_vp_impl_ci
-          source: rel_impl_docs
-          target: rel_vp_impl_ci
+        - id: r45
+          source: wp_release
+          target: delv_bin
           kind: Realization
+        - id: r46
+          source: wp_release
+          target: delv_crate
+          kind: Realization
+        - id: r47
+          source: plateau_current
+          target: delv_bin
+          kind: Aggregation
+        - id: r48
+          source: plateau_current
+          target: delv_crate
+          kind: Aggregation
+    - id: vp_business
+      name: Stakeholder View
+      kind: business
+      elements:
+        - id: actor_org
+          name: archr Project
+          kind: BusinessActor
+        - id: role_owner
+          name: Maintainer
+          kind: BusinessRole
+      relationships:
+        - id: r61
+          source: actor_org
+          target: role_owner
+          kind: Assignment
