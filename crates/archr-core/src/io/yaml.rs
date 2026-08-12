@@ -26,7 +26,7 @@ struct YamlModelInner {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-enum YamlViewpointKind {
+pub enum YamlViewpointKind {
     None,
     Business,
     Application,
@@ -464,7 +464,6 @@ model:
         )
     }
 
-    #[test]
     #[test]
     fn test_round_trip() {
         let original = r#"
