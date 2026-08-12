@@ -3,9 +3,9 @@
 //! Uses typed newtype indices (`ElementId`, `RelationId`) for O(1) `Vec` access
 //! instead of `Rc<RefCell<>>` or string-keyed `HashMap`s.
 
+use crate::io::yaml::YamlViewpointDefinition;
 use std::ops::Index;
 use std::str::FromStr;
-use crate::io::yaml::YamlViewpointDefinition;
 
 // ---------------------------------------------------------------------------
 // Layer enum
@@ -749,7 +749,7 @@ impl Model {
             name: name.into(),
             elements: Vec::new(),
             relations: Vec::new(),
-        viewpoints: Vec::new(),
+            viewpoints: Vec::new(),
         }
     }
 

@@ -8,8 +8,7 @@ use archr_core::{
     io::{xml, yaml},
     layout::LayoutResolver,
     validate::validate_model,
-    ElementId,
-    RelationId,
+    ElementId, RelationId,
 };
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
