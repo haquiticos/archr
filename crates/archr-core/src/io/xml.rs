@@ -7,7 +7,7 @@
 //! and the diagram view uses `<child>`/`<sourceConnection>` nesting.
 
 use crate::model::{ElementId, ElementKind, ElementLayer, Model, RelationId, RelationKind};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 use thiserror::Error;
 use uuid::Uuid;
@@ -127,9 +127,50 @@ pub fn model_to_xml(
         let _ = writeln!(xml, "  </folder>");
     }
 
-    // --- Views folder (single diagram with all elements) ---
+    // --- Views folder: one diagram per viewpoint, or a single "Default View" ---
     if model.element_count() > 0 {
-        emit_diagram(&mut xml, model, positions, &elem_ids, &rel_ids, &child_ids);
+        let folder_id = Uuid::new_v4();
+        let _ = writeln!(
+            xml,
+            "  <folder name=\"Views\" id=\"{}\" type=\"diagrams\">",
+            folder_id
+        );
+
+        let viewpoints = model.viewpoints();
+        if viewpoints.is_empty() {
+            let spec = DiagramSpec {
+                name: "Default View",
+                viewpoint: None,
+                filter: None,
+            };
+            emit_diagram(
+                &mut xml, model, positions, &elem_ids, &rel_ids, &child_ids, &spec,
+            );
+        } else {
+            for vp in viewpoints {
+                // Resolve the set of internal ElementIds referenced by this viewpoint.
+                let filter: Option<HashSet<ElementId>> = if vp.elements.is_empty() {
+                    None
+                } else {
+                    Some(
+                        vp.elements
+                            .iter()
+                            .filter_map(|e| _elem_id_map.and_then(|m| m.get(&e.id)).copied())
+                            .collect(),
+                    )
+                };
+                let spec = DiagramSpec {
+                    name: &vp.name,
+                    viewpoint: Some(vp.kind.as_viewpoint_name()),
+                    filter: filter.as_ref(),
+                };
+                emit_diagram(
+                    &mut xml, model, positions, &elem_ids, &rel_ids, &child_ids, &spec,
+                );
+            }
+        }
+
+        let _ = writeln!(xml, "  </folder>");
     }
 
     xml.push_str("</archimate:model>\n");
@@ -188,8 +229,18 @@ fn emit_element_folders(xml: &mut String, model: &Model, elem_ids: &HashMap<Elem
     }
 }
 
-/// Emit the Views folder with a single `ArchimateDiagramModel` containing one
-/// `DiagramObject` per element and `Connection`s nested as `sourceConnection`s.
+/// Options describing a single diagram to emit.
+struct DiagramSpec<'a> {
+    /// Diagram title.
+    name: &'a str,
+    /// Emit `viewpoint` attribute (when set).
+    viewpoint: Option<&'a str>,
+    /// Restrict DiagramObjects to just these elements (when set); connections
+    /// appear only when both endpoints are in scope.
+    filter: Option<&'a HashSet<ElementId>>,
+}
+
+/// Emit one `ArchimateDiagramModel` inside an already-open Views folder.
 fn emit_diagram(
     xml: &mut String,
     model: &Model,
@@ -197,29 +248,50 @@ fn emit_diagram(
     elem_ids: &HashMap<ElementId, String>,
     rel_ids: &HashMap<RelationId, String>,
     child_ids: &HashMap<ElementId, String>,
+    spec: &DiagramSpec,
 ) {
-    let folder_id = Uuid::new_v4();
     let diagram_id = Uuid::new_v4();
-    let _ = writeln!(
-        xml,
-        "  <folder name=\"Views\" id=\"{}\" type=\"diagrams\">",
-        folder_id
-    );
+    let vp_attr = spec
+        .viewpoint
+        .map(|v| format!(" viewpoint=\"{}\"", xml_escape(v)))
+        .unwrap_or_default();
     let _ = writeln!(
         xml,
         "    <element xsi:type=\"archimate:ArchimateDiagramModel\" \
-         name=\"Default View\" id=\"{}\">",
+         name=\"{}\"{} id=\"{}\">",
+        xml_escape(spec.name),
+        vp_attr,
         diagram_id
     );
 
-    // Group connections by source element so they nest inside the source child.
+    // Restrict to filtered elements when a viewpoint scope is provided.
+    let in_filter = |id: ElementId| spec.filter.map_or(true, |f| f.contains(&id));
+
+    // Group connections by source element so they nest inside the source child,
+    // limited to relationships whose endpoints are both in scope.
     let mut conns_by_source: HashMap<ElementId, Vec<_>> = HashMap::new();
     for rel in model.iter_relations() {
-        conns_by_source.entry(rel.source).or_default().push(rel);
+        if in_filter(rel.source) && in_filter(rel.target) {
+            conns_by_source.entry(rel.source).or_default().push(rel);
+        }
+    }
+
+    // Assign stable connection IDs + group inbound connections per target element,
+    // so target DiagramObjects can declare `targetConnections` (as Archi expects).
+    let mut conn_id_by_rel: HashMap<RelationId, String> = HashMap::new();
+    let mut target_conns: HashMap<ElementId, Vec<String>> = HashMap::new();
+    for rel in model.iter_relations() {
+        if in_filter(rel.source) && in_filter(rel.target) {
+            let conn_id = conn_id_by_rel
+                .entry(rel.id)
+                .or_insert_with(|| Uuid::new_v4().to_string())
+                .clone();
+            target_conns.entry(rel.target).or_default().push(conn_id);
+        }
     }
 
     // Sort elements by position (Y then X) for proper visual layering.
-    let mut sorted: Vec<_> = model.iter_elements().collect();
+    let mut sorted: Vec<_> = model.iter_elements().filter(|e| in_filter(e.id)).collect();
     sorted.sort_by(|a, b| {
         let (_, ya, _, _) = positions
             .get(&a.id)
@@ -251,11 +323,17 @@ fn emit_diagram(
             .copied()
             .unwrap_or((0.0, 0.0, 120.0, 55.0));
 
+        let target_conns_attr = target_conns
+            .get(&elem.id)
+            .filter(|ids| !ids.is_empty())
+            .map(|ids| format!(" targetConnections=\"{}\"", ids.join(" "),))
+            .unwrap_or_default();
+
         let _ = writeln!(
             xml,
-            "      <child xsi:type=\"archimate:DiagramObject\" id=\"{}\" \
-             archimateElementRef=\"{}\">",
-            child_id, elem_ids[&elem.id],
+            "      <child xsi:type=\"archimate:DiagramObject\" id=\"{}\"{} \
+             archimateElement=\"{}\">",
+            child_id, target_conns_attr, elem_ids[&elem.id],
         );
         let _ = writeln!(
             xml,
@@ -270,11 +348,8 @@ fn emit_diagram(
                     xml,
                     "        <sourceConnection xsi:type=\"archimate:Connection\" \
                      id=\"{}\" source=\"{}\" target=\"{}\" \
-                     archimateRelationshipRef=\"{}\"/>",
-                    Uuid::new_v4(),
-                    child_id,
-                    child_ids[&rel.target],
-                    rel_ids[&rel.id],
+                     archimateRelationship=\"{}\"/>",
+                    conn_id_by_rel[&rel.id], child_id, child_ids[&rel.target], rel_ids[&rel.id],
                 );
             }
         }
@@ -283,7 +358,6 @@ fn emit_diagram(
     }
 
     let _ = writeln!(xml, "    </element>");
-    let _ = writeln!(xml, "  </folder>");
 }
 
 /// Map an `ElementLayer` to the `(name, type)` of its Archi folder.

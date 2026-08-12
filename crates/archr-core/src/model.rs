@@ -805,6 +805,16 @@ impl Model {
     pub fn iter_relations(&self) -> impl Iterator<Item = &Relationship> {
         self.relations.iter()
     }
+
+    /// Viewpoint definitions attached to the model.
+    pub fn viewpoints(&self) -> &[YamlViewpointDefinition] {
+        &self.viewpoints
+    }
+
+    /// Replace the model's viewpoint definitions.
+    pub fn set_viewpoints(&mut self, viewpoints: Vec<YamlViewpointDefinition>) {
+        self.viewpoints = viewpoints;
+    }
 }
 
 impl Index<ElementId> for Model {
