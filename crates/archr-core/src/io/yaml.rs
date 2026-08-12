@@ -272,7 +272,6 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     // Attach viewpoint definitions to the model so serialization can emit one
     // diagram per viewpoint.
     model.set_viewpoints(viewpoints.clone());
-
     Ok((
         model,
         str_to_elem,

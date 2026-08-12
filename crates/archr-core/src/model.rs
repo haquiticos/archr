@@ -788,7 +788,7 @@ impl Model {
 
     /// Number of elements.
     pub fn element_count(&self) -> usize {
-        self.elements.len()
+        self.elements.len() + self.viewpoints.len()
     }
 
     /// Number of relationships.
