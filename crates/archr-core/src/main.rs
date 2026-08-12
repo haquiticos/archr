@@ -18,7 +18,7 @@ use std::process::ExitCode;
 #[derive(Parser)]
 #[command(
     name = "archr",
-    version = "1.0.0",
+    version = "1.1.0",
     about = "Headless ArchiMate 3.2 engine"
 )]
 struct Cli {
