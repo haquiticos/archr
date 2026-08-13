@@ -191,17 +191,17 @@ impl LayoutResolver {
                 }
             };
 
-            // Assign grid positions
+            // Assign grid positions: row = depth, column = rank within that row.
+            // Sweep over the component in stable (graph) order so siblings at the
+            // same depth land side-by-side instead of stacking on x=0.
+            let mut col_at_depth: HashMap<usize, usize> = HashMap::new();
             for orig_idx in component_nodes {
                 let elem_id = graph[*orig_idx];
                 let depth = depths[&elem_id];
-
-                // Position: x = col * COL_WIDTH + component_x_offset
-                // y = depth * ROW_HEIGHT
-                let col = 0; // Simplified: all nodes in a row
-                let x = col as f64 * COL_WIDTH + component_index as f64 * COMPONENT_OFFSET;
+                let col = col_at_depth.entry(depth).or_insert(0);
+                let x = *col as f64 * COL_WIDTH + component_index as f64 * COMPONENT_OFFSET;
                 let y = depth as f64 * ROW_HEIGHT;
-
+                *col += 1;
                 self.positions.insert(elem_id, (x, y, 120.0, 55.0));
             }
 

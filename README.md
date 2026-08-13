@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/insta
 Pin a version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v1.0.0"
+curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v1.1.0"
 ```
 
 ### Install script (Windows)
@@ -71,7 +71,7 @@ cargo build --release
 
 ```bash
 archr --version
-# archr 1.0.0
+# archr 1.1.0
 ```
 
 ### Define a model (YAML)
@@ -146,7 +146,7 @@ Output (JSON):
 | `generate` | `--input <yaml> --output <xml>` | 0 success, 2 error |
 | `parse` | `--input <xml> --output <yaml>` | 0 success, 2 error |
 | `diff` | `--old <xml> --new <yaml>` | 0 success, 2 error |
-| `--version` | — | `archr 1.0.0` |
+| `--version` | — | `archr 1.1.0` |
 
 **Conventions:** Data goes to stdout. Diagnostics go to stderr.
 

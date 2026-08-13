@@ -113,7 +113,7 @@ assert_contains "$OUTPUT" '"added": \[\]' "diff has no additions"
 
 echo "==> Testing --version..."
 OUTPUT=$("$BINARY" --version 2>/dev/null)
-assert_contains "$OUTPUT" "archr 1.0.0" "version is 1.0.0"
+assert_contains "$OUTPUT" "archr 1.1.0" "version is 1.1.0"
 
 echo "==> Testing Python skill wrapper..."
 if command -v python3 &>/dev/null; then
