@@ -786,9 +786,9 @@ impl Model {
         &self.relations[id.0]
     }
 
-    /// Number of elements.
+    /// Number of elements in the model graph (excludes viewpoints).
     pub fn element_count(&self) -> usize {
-        self.elements.len() + self.viewpoints.len()
+        self.elements.len()
     }
 
     /// Number of relationships.

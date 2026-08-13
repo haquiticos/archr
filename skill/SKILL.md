@@ -10,7 +10,7 @@ compatibility: >
   Requires the `archr` Rust binary (v1.0.0+) in PATH or set via ARCHR_BIN env var.
   Python >= 3.10 for the wrapper script. No pip dependencies.
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   author: haquiticos
 ---
 
@@ -82,8 +82,19 @@ model:
     - id: rel_002
       source: app_001
       target: fn_001
-      kind: Realization
+  viewpoints:
+    - id: vp_business
+      name: Business Viewpoint
+      kind: business
+      elements:
+        - actor_001
+        - fn_001
+      relationships:
+        - rel_001
 ```
+
+> **Full schema:** See [`docs/schema.yaml`](../docs/schema.yaml) for all 62 element kinds, 11 relationship kinds, 6 viewpoint kinds, and validation rules.
+> **Viewpoints guide:** See [`docs/viewpoints.md`](../docs/viewpoints.md) for viewpoint structure and examples.
 
 ## Relationship Rules (ArchiMate 3.2)
 **Note**: These rules are derived from the implementation. See [SPEC.md](SPEC.md) for authoritative documentation.

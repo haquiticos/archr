@@ -1,0 +1,29 @@
+model:
+  name: Viewpoint Test
+  elements:
+    - id: e1
+      name: Customer
+      kind: BusinessActor
+    - id: e2
+      name: CRM
+      kind: ApplicationComponent
+  relationships:
+    - id: r1
+      source: e2
+      target: e1
+      kind: Serving
+  viewpoints:
+    - id: vp_business
+      name: Business Viewpoint
+      kind: business
+      elements:
+        - e1
+      relationships: []
+    - id: vp_full
+      name: Full Viewpoint
+      kind: none
+      elements:
+        - e1
+        - e2
+      relationships:
+        - r1

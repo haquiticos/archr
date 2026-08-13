@@ -1,7 +1,0 @@
-model:
-  name: Invalid Viewpoint Test
-  viewpoint: UnknownViewpoint
-  elements:
-    - id: e1
-      name: Actor
-      kind: BusinessActor

@@ -6,10 +6,8 @@ ARTIFACT_NAME="${2}"
 TARGET_PATH="${3}"
 
 if [[ "$RUNNER_OS" == "Windows" ]]; then
-  # PowerShell para Windows
-  # Listar arquivos para debug
+  # PowerShell rename for Windows
   dir "$TARGET_PATH/release" | findstr archr
-  # Criar arquivo de script temporário
   echo "Write-Host \"Target path: $TARGET_PATH\"" > /tmp/rename.ps1
   echo "Write-Host \"Artifact name: archr-windows-x86_64.exe\"" >> /tmp/rename.ps1
   echo "dir '$TARGET_PATH/release' | findstr archr" >> /tmp/rename.ps1
@@ -17,6 +15,7 @@ if [[ "$RUNNER_OS" == "Windows" ]]; then
   echo "dir '$TARGET_PATH/release' | findstr archr" >> /tmp/rename.ps1
   echo "Write-Host \"Rename result: $?\"" >> /tmp/rename.ps1
   pwsh -ExecutionPolicy Bypass -File /tmp/rename.ps1
-  # Bash para Linux e macOS
+else
+  # Linux & macOS: rename the release binary to the artifact name
   find "$TARGET_PATH/release" -maxdepth 1 -name "archr" -type f -exec mv {} "$ARTIFACT_NAME" \;
 fi

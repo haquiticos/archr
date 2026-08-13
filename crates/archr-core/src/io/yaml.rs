@@ -55,9 +55,9 @@ pub struct YamlViewpointDefinition {
     pub name: String,
     pub kind: YamlViewpointKind,
     #[serde(default)]
-    pub elements: Vec<YamlElement>,
+    pub elements: Vec<String>,
     #[serde(default)]
-    pub relationships: Vec<YamlRelationship>,
+    pub relationships: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -181,42 +181,35 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
         }
     }
 
-    // Validate viewpoint elements and relationships (after global elements are created)
+    // Build set of valid global relationship IDs for viewpoint reference validation.
+    let rel_ids_valid: HashSet<String> = relationships.iter().map(|r| r.id.clone()).collect();
+
+    // Validate viewpoint element and relationship id-references (after global elements are created)
     for vp_def in viewpoints.iter() {
-        // Validate viewpoint element IDs
+        // Validate viewpoint element IDs — must reference existing global elements.
         let mut vp_seen_ids: HashSet<String> = HashSet::new();
-        for elem in &vp_def.elements {
-            if elem.id.is_empty() || elem.id.contains(' ') {
+        for elem_id in &vp_def.elements {
+            if elem_id.is_empty() || elem_id.contains(' ') {
                 errors.push(SchemaError::InvalidId);
-            } else if !vp_seen_ids.insert(elem.id.clone()) {
+            } else if !vp_seen_ids.insert(elem_id.clone()) {
                 errors.push(SchemaError::DuplicateId);
             }
-            // Only validate kind if it's provided and not empty
-            if !elem.kind.is_empty() && ElementKind::from_name(&elem.kind).is_none() {
-                errors.push(SchemaError::UnknownKind);
+            if !elem_id.is_empty() && !id_to_index.contains_key(elem_id) {
+                errors.push(SchemaError::UndefinedId);
             }
         }
 
-        // Build viewpoint element ID map (only includes elements from this viewpoint)
-        let mut vp_id_to_index = std::collections::HashMap::new();
-        for (idx, elem) in vp_def.elements.iter().enumerate() {
-            vp_id_to_index.insert(elem.id.clone(), idx);
-        }
-
-        // Validate viewpoint relationships (can reference elements from this viewpoint only)
-        for rel in &vp_def.relationships {
-            if rel.id.is_empty() || rel.id.contains(' ') {
+        // Validate viewpoint relationship IDs — must reference existing global relationships.
+        let mut vp_seen_rels: HashSet<String> = HashSet::new();
+        for rel_id in &vp_def.relationships {
+            if rel_id.is_empty() || rel_id.contains(' ') {
                 errors.push(SchemaError::InvalidId);
+            } else if !vp_seen_rels.insert(rel_id.clone()) {
+                errors.push(SchemaError::DuplicateId);
             }
-            // Check if source or target exists in this viewpoint's elements
-            if !vp_id_to_index.contains_key(&rel.source) {
+            // Viewpoint relationship id must reference an existing global relationship.
+            if !rel_id.is_empty() && !rel_ids_valid.contains(rel_id) {
                 errors.push(SchemaError::UndefinedId);
-            }
-            if !vp_id_to_index.contains_key(&rel.target) {
-                errors.push(SchemaError::UndefinedId);
-            }
-            if RelationKind::from_name(&rel.kind).is_none() {
-                errors.push(SchemaError::UnknownKind);
             }
         }
     }
@@ -252,9 +245,9 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     // Map viewpoint element IDs to global element IDs
     let mut vp_str_to_elem: HashMap<String, ElementId> = HashMap::new();
     for vp_def in viewpoints.iter() {
-        for elem in &vp_def.elements {
-            if let Some(elem_id) = str_to_elem.get(&elem.id) {
-                vp_str_to_elem.insert(elem.id.clone(), *elem_id);
+        for elem_id in &vp_def.elements {
+            if let Some(&internal_id) = str_to_elem.get(elem_id) {
+                vp_str_to_elem.insert(elem_id.clone(), internal_id);
             }
         }
     }
@@ -262,9 +255,9 @@ pub fn parse_yaml_with_ids(input: &str) -> YamlParseResult {
     // Map viewpoint relationship IDs to global relationship IDs
     let mut vp_str_to_rel: HashMap<String, RelationId> = HashMap::new();
     for vp_def in viewpoints.iter() {
-        for rel in &vp_def.relationships {
-            if let Some(rel_id) = str_to_rel.get(&rel.id) {
-                vp_str_to_rel.insert(rel.id.clone(), *rel_id);
+        for rel_id in &vp_def.relationships {
+            if let Some(&internal_id) = str_to_rel.get(rel_id) {
+                vp_str_to_rel.insert(rel_id.clone(), internal_id);
             }
         }
     }
