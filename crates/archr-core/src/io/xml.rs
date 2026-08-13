@@ -155,7 +155,7 @@ pub fn model_to_xml(
                     Some(
                         vp.elements
                             .iter()
-                            .filter_map(|e| _elem_id_map.and_then(|m| m.get(&e.id)).copied())
+                            .filter_map(|id| _elem_id_map.and_then(|m| m.get(id)).copied())
                             .collect(),
                     )
                 };

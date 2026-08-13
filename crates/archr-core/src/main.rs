@@ -8,7 +8,6 @@ use archr_core::{
     io::{xml, yaml},
     layout::LayoutResolver,
     validate::validate_model,
-    ElementId, RelationId,
 };
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
@@ -155,8 +154,13 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
         }
     };
 
-    let (model, elem_id_map, rel_id_map, _, _, _) = yaml::parse_yaml_with_ids(&yaml_str).unwrap();
-    let _ = None::<(HashMap<String, ElementId>, HashMap<String, RelationId>)>;
+    let (model, elem_id_map, rel_id_map, _, _, _) = match yaml::parse_yaml_with_ids(&yaml_str) {
+        Ok(parsed) => parsed,
+        Err(errors) => {
+            eprintln!("error: schema validation failed: {:?}", errors);
+            return ExitCode::from(2);
+        }
+    };
 
     // Calculate layout positions.
     let mut resolver = LayoutResolver::default();

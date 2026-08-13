@@ -1,0 +1,13 @@
+model:
+  name: Viewpoint Ghost
+  elements:
+    - id: e1
+      name: Customer
+      kind: BusinessActor
+  viewpoints:
+    - id: vp1
+      name: Ghost Viewpoint
+      kind: business
+      elements:
+        - ghost_id_not_in_model
+      relationships: []

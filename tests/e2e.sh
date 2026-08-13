@@ -85,8 +85,9 @@ assert_exit 0 "$RC" "validate self_loop.yaml"
 OUTPUT=$("$BINARY" validate --input "$FIXTURES/empty.yaml" ); RC=$?
 assert_exit 0 "$RC" "validate empty.yaml"
 
-OUTPUT=$("$BINARY" diff --old "$FIXTURES/old_no_dup.archimate" --new "$FIXTURES/duplicate_names.yaml" 2>/dev/stderr); RC=$?
-assert_exit 2 "$RC" "diff duplicate_names" + echo "Output length: ${#OUTPUT}"assert_contains "$OUTPUT" "reference errors" "diff reports reference errors"
+OUTPUT=$("$BINARY" diff --old "$FIXTURES/old_no_dup.archimate" --new "$FIXTURES/duplicate_names.yaml" 2>&1); RC=$?
+assert_exit 2 "$RC" "diff duplicate_names"
+assert_contains "$OUTPUT" "reference errors" "diff reports reference errors"
 
 OUTPUT=$("$BINARY" validate --input "$FIXTURES/cyclic.yaml" ); RC=$?
 assert_exit 0 "$RC" "validate cyclic.yaml"
@@ -111,6 +112,22 @@ OUTPUT=$("$BINARY" diff --old "$TMPDIR/out.archimate" --new "$FIXTURES/valid.yam
 assert_exit 0 "$RC" "diff valid round-trip"
 assert_contains "$OUTPUT" '"added": \[\]' "diff has no additions"
 
+# viewpoint_valid.yaml → exit 0, success:true
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/viewpoint_valid.yaml" ); RC=$?
+assert_exit 0 "$RC" "validate viewpoint_valid.yaml"
+assert_contains "$OUTPUT" '"success": true' "viewpoint_valid.yaml has success:true"
+
+# viewpoint_ghost.yaml → exit 1 (UndefinedId — VP element references non-existent id)
+OUTPUT=$("$BINARY" validate --input "$FIXTURES/viewpoint_ghost.yaml" ); RC=$?
+assert_exit 1 "$RC" "validate viewpoint_ghost.yaml"
+assert_contains "$OUTPUT" '"UndefinedId"' "viewpoint_ghost.yaml reports UndefinedId"
+
+# generate viewpoint_valid.yaml → XML with one diagram per viewpoint
+"$BINARY" generate --input "$FIXTURES/viewpoint_valid.yaml" --output "$TMPDIR/vp_out.archimate" ; RC=$?
+assert_exit 0 "$RC" "generate viewpoint_valid.yaml"
+assert_contains "$(cat "$TMPDIR/vp_out.archimate")" 'ArchimateDiagramModel' "viewpoint XML has diagram"
+assert_contains "$(cat "$TMPDIR/vp_out.archimate")" 'viewpoint="business"' "viewpoint XML has business viewpoint attribute"
+
 echo "==> Testing --version..."
 OUTPUT=$("$BINARY" --version 2>/dev/null)
 assert_contains "$OUTPUT" "archr 1.1.0" "version is 1.1.0"
@@ -132,6 +149,3 @@ else
     echo "SOME TESTS FAILED"
     exit 1
 fi
-
-OUTPUT=$("$BINARY" diff --old "$FIXTURES/old_no_dup.archimate" --new "$FIXTURES/duplicate_names.yaml" ); RC=$?
-assert_exit 2 "$RC" "diff duplicate_names" 

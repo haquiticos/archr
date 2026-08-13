@@ -1,0 +1,137 @@
+# ArchiMate YAML Schema for archr
+#
+# This is a reference schema documenting the YAML format accepted by `archr validate`,
+# `archr generate`, and `archr diff --new`. It is descriptive — archr uses a Rust
+# deserializer (serde_yaml), not this file, for validation. Use it as a template
+# and as documentation of required/optional fields and valid enum values.
+#
+# Top-level structure: a single `model` object.
+
+model:
+  # Required — the model name (string).
+  name: string
+
+  # Optional — list of elements. Defaults to [].
+  elements:
+    - # Required — unique identifier, non-empty, no spaces.
+      id: string
+      # Optional — human-readable name. Defaults to "".
+      name: string
+      # Required — one of 62 ArchiMate 3.2 element types (PascalCase).
+      # See ELEMENT_KINDS below.
+      kind: string
+
+  # Optional — list of relationships. Defaults to [].
+  relationships:
+    - # Required — unique identifier, non-empty, no spaces.
+      id: string
+      # Required — id of a source element (must exist in model.elements).
+      source: string
+      # Required — id of a target element (must exist in model.elements).
+      target: string
+      # Required — one of 11 relationship types (PascalCase).
+      # See RELATION_KINDS below.
+      kind: string
+
+  # Optional — list of viewpoints. Defaults to [].
+  viewpoints:
+    - # Required — unique identifier, non-empty, no spaces.
+      id: string
+      # Required — human-readable name.
+      name: string
+      # Required — one of 6 viewpoint kinds (lowercase).
+      # One of: none, motivation, business, application, implementation, compliance
+      kind: string
+      # Required — list of element ID references (strings, not objects).
+      # Each string must be the `id` of an element in model.elements.
+      elements:
+        - string
+      # Optional — list of relationship ID references (strings, not objects).
+      # Each string must be the `id` of a relationship in model.relationships.
+      # Defaults to [].
+      relationships:
+        - string
+
+# ELEMENT_KINDS — 62 valid values for `elements[].kind`
+# ===========================================================================
+# All values are PascalCase, matching the Open Exchange xsi:type attribute.
+#
+# Motivation (10):
+#   Stakeholder, Driver, Assessment, Goal, Outcome, Principle,
+#   Requirement, Constraint, Meaning, Value
+#
+# Strategy (4):
+#   Resource, Capability, ValueStream, CourseOfAction
+#
+# Business (13):
+#   BusinessActor, BusinessRole, BusinessCollaboration, BusinessInterface,
+#   BusinessProcess, BusinessFunction, BusinessInteraction, BusinessEvent,
+#   BusinessService, BusinessObject, Contract, Representation, Product
+#
+# Application (9):
+#   ApplicationComponent, ApplicationCollaboration, ApplicationInterface,
+#   ApplicationFunction, ApplicationProcess, ApplicationInteraction,
+#   ApplicationEvent, ApplicationService, DataObject
+#
+# Technology (13):
+#   Node, Device, SystemSoftware, TechnologyCollaboration, TechnologyInterface,
+#   Path, CommunicationNetwork, Artifact, TechnologyFunction,
+#   TechnologyProcess, TechnologyInteraction, TechnologyEvent, TechnologyService
+#
+# Physical (4):
+#   Equipment, Facility, Material, DistributionNetwork
+#
+# Implementation & Migration (5):
+#   WorkPackage, Deliverable, ImplementationEvent, Plateau, Gap
+#
+# Other (4):
+#   Grouping, Location, AndJunction, OrJunction
+
+# ===========================================================================
+# RELATION_KINDS — 11 valid values for `relationships[].kind`
+# and `viewpoints[].relationships[].kind`
+# ===========================================================================
+# All values are PascalCase.
+#
+#   Composition, Aggregation, Assignment, Realization,
+#   Serving, Access, Influence, Association,
+#   Triggering, Flow,
+#   Specialization
+
+# ===========================================================================
+# VIEWPOINT_KINDS — 6 valid values for `viewpoints[].kind`
+# ===========================================================================
+# All values are lowercase.
+#
+#   none, motivation, business, application, implementation, compliance
+
+# ===========================================================================
+# VALIDATION RULES
+# ===========================================================================
+#
+# 1. model.name is required. model.elements, model.relationships, model.viewpoints
+#    are optional (default to []).
+#
+# 2. All `id` fields must be non-empty and contain no spaces.
+#
+# 3. All element `id`s must be unique within model.elements.
+#
+# 4. All element `kind`s must be one of ELEMENT_KINDS (PascalCase, case-sensitive).
+#
+# 5. relationship `source` and `target` must reference existing element ids.
+#
+# 6. All relationship `kind`s must be one of RELATION_KINDS (PascalCase, case-sensitive).
+#
+# 7. viewpoint `elements` is a list of element ID strings — each must reference
+#    an existing element in model.elements.
+#
+# 8. viewpoint element IDs must be unique within the viewpoint.
+#
+# 9. viewpoint `relationships` is a list of relationship ID strings — each must
+#    reference an existing relationship in model.relationships.
+#
+# 10. viewpoint `kind` must be one of VIEWPOINT_KINDS (lowercase, case-sensitive).
+#
+# 11. ArchiMate 3.2 derivability rules are enforced by `archr validate` —
+#     relationships between layers must follow the ALLOWED matrix.
+#     See README.md "Relationship Constraints" for a summary.

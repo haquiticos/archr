@@ -27,11 +27,11 @@ A headless Rust engine for ArchiMate 3.2 — validate, manipulate, and export ar
 
 ## Documentation
 
-Full documentation, including installation, upgrade, CLI reference, and guides is available at [haquiticos.github.io/archr](https://haquiticos.github.io/archr).
+- [docs/schema.yaml](docs/schema.yaml) — YAML reference schema (62 element kinds, 11 relationship kinds, 6 viewpoint kinds)
+- [docs/viewpoints.md](docs/viewpoints.md) — Viewpoints guide
+- [haquiticos.github.io/archr](https://haquiticos.github.io/archr) — full installation, upgrade, and CLI reference
 
 ## Installation
-
-**Docs:** [haquiticos.github.io/archr](https://haquiticos.github.io/archr) — full installation, upgrade, and uninstall guide.
 
 ### Install script (macOS & Linux)
 
@@ -88,10 +88,20 @@ model:
       kind: ApplicationComponent
   relationships:
     - id: rel_001
-      source: actor_001
-      target: app_001
+      source: app_001
+      target: actor_001
       kind: Serving
+  viewpoints:
+    - id: vp_business
+      name: Business Viewpoint
+      kind: business
+      elements:
+        - actor_001
+      relationships: []
 ```
+
+> **Schema:** See [`docs/schema.yaml`](docs/schema.yaml) for the full YAML reference — all 62 element kinds, 11 relationship kinds, 6 viewpoint kinds, and validation rules.
+> **Viewpoints:** See [`docs/viewpoints.md`](docs/viewpoints.md) for the viewpoints guide.
 
 ### Validate
 
@@ -115,7 +125,7 @@ Exit code `0` = valid, `1` = validation errors, `2` = I/O or malformed YAML.
 archr generate --input model.yaml --output model.archimate
 ```
 
-Produces an Open Exchange 3.0 XML file with UUIDs, layout coordinates, and a default diagram view — ready to import into [Archi](https://www.archimatetool.com).
+Produces an Open Exchange 3.0 XML file with UUIDs, layout coordinates, and one diagram view per viewpoint (or a single "Default View" when no viewpoints are defined) — ready to import into [Archi](https://www.archimatetool.com).
 
 ### Parse XML back
 
@@ -198,6 +208,9 @@ archr/
 │           └── io/
 │               ├── yaml.rs       # YAML parse + serialize + schema validation
 │               └── xml.rs        # Open Exchange XML bidirectional I/O
+├── docs/
+│   ├── schema.yaml              # YAML reference schema
+│   └── viewpoints.md            # Viewpoints guide
 ├── skill/
 │   ├── SKILL.md                  # Agent Skill spec (frontmatter + instructions)
 │   ├── scripts/
@@ -205,7 +218,7 @@ archr/
 │   └── references/
 │       └── ARCHIMATE_RULES.md    # Derivability rules reference
 ├── tests/
-│   ├── fixtures/                 # 8 YAML test scenarios
+│   ├── fixtures/                 # YAML test scenarios
 │   └── e2e.sh                     # End-to-end test suite
 └── .github/workflows/            # CI: build-rust, test-skill, e2e-test
 ```

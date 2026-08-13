@@ -146,8 +146,6 @@ impl ModelDiffAnalyzer {
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
-#[cfg(test)]
-#[cfg(test)]
 mod tests {
     use super::*;
     use crate::model::{ElementKind, Model, RelationKind};
