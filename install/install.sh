@@ -3,19 +3,33 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash
-#   curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v1.0.0"
+#   curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v0.4"
 #
 # Installs the prebuilt `archr` binary into $ARCHR_INSTALL/bin (default $HOME/.archr/bin)
-# and updates shell rc files to add it to PATH.
+# and updates shell rc files to add it to PATH. Also installs the archr skill
+# into $ARCHR_SKILLS_DIR (default $HOME/.agents/skills/archr-skill) from the
+# matching source tag.
 
 set -euo pipefail
 
 ARCHR_REPO="haquiticos/archr"
 ARCHR_INSTALL="${ARCHR_INSTALL:-$HOME/.archr}"
-ARCHR_VERSION="${1:-}"
+ARCHR_SKILLS_DIR="${ARCHR_SKILLS_DIR:-$HOME/.agents/skills}"
+ARCHR_VERSION="${1:-v0.4}"
 
 err()  { printf "\033[31merror:\033[0m %s\n" "$*" >&2; }
 info() { printf "\033[32m==>\033[0m %s\n" "$*" >&2; }
+
+fetch_url() {
+  local url="$1" out="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$url" -o "$out"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "$out" "$url"
+  else
+    err "need curl or wget"; exit 1
+  fi
+}
 
 # --- platform / arch detection -----------------------------------------------
 detect_target() {
@@ -32,13 +46,7 @@ detect_target() {
     arm64|aarch64) arch="arm64" ;;
     *) err "unsupported arch: $arch"; exit 1 ;;
   esac
-  # only targets we ship in release.yml
-  if [ "$os" = "macos" ] && [ "$arch" = "arm64" ]; then arch="arm64"; fi
-  if [ "$os" = "linux" ] && [ "$arch" = "arm64" ]; then
-    err "linux arm64 build not published yet; see https://github.com/haquiticos/archr/releases"
-    exit 1
-  fi
-  echo "archr-${os}-${arch}"
+  echo "archr"
 }
 
 # --- download -----------------------------------------------------------------
@@ -48,18 +56,49 @@ download() {
   if [ -z "$version" ]; then
     url="https://github.com/${ARCHR_REPO}/releases/latest/download/${target}"
   else
-    # accept both "v1.0.0" and "1.0.0"
     [ "${version#v}" = "$version" ] && version="v${version}"
     url="https://github.com/${ARCHR_REPO}/releases/download/${version}/${target}"
   fi
   info "downloading $url"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$url" -o "$out"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$out" "$url"
+  fetch_url "$url" "$out"
+}
+
+# --- skill --------------------------------------------------------------------
+# Resolve the release tag for skill assets: the version arg if given, otherwise
+# the latest published release tag.
+resolve_tag() {
+  if [ -n "$ARCHR_VERSION" ]; then
+    local v="$ARCHR_VERSION"
+    [ "${v#v}" = "$v" ] && v="v${v}"
+    echo "$v"
   else
-    err "need curl or wget"; exit 1
+    local api="https://api.github.com/repos/${ARCHR_REPO}/releases/latest"
+    fetch_url "$api" - 2>/dev/null \
+      | grep '"tag_name"' | head -1 \
+      | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/'
   fi
+}
+
+# Install the skill tree (skill/) for the given release tag into the skills dir.
+install_skill() {
+  local tag dest tmp tgz src
+  tag="$(resolve_tag)"
+  [ -n "$tag" ] || { err "could not resolve archr version for skill"; return 1; }
+  dest="$ARCHR_SKILLS_DIR/archr-skill"
+  tmp="$(mktemp -d)"
+  tgz="$tmp/archr-src.tar.gz"
+  info "downloading skill source @ ${tag}"
+  fetch_url "https://codeload.github.com/${ARCHR_REPO}/tar.gz/refs/tags/${tag}" "$tgz"
+  tar -xzf "$tgz" -C "$tmp"
+  src="$(find "$tmp" -maxdepth 2 -type d -path '*/archr-*/skill' | head -1)"
+  [ -n "$src" ] || { err "skill/ not found in source tarball @ ${tag}"; rm -rf "$tmp"; return 1; }
+  rm -rf "$dest"
+  mkdir -p "$ARCHR_SKILLS_DIR"
+  cp -R "$src" "$dest"
+  rm -rf "$dest/scripts/__pycache__"
+  find "$dest" -name '*.pyc' -delete
+  rm -rf "$tmp"
+  info "installed skill to $dest"
 }
 
 # --- PATH ---------------------------------------------------------------------
@@ -108,19 +147,24 @@ main() {
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
 
-  download "$target" "$ARCHR_VERSION" "$tmp/$target"
-  chmod +x "$tmp/$target"
-  mv "$tmp/$target" "$binpath"
-  info "installed archr to $binpath"
+  if download "$target" "$ARCHR_VERSION" "$tmp/$target"; then
+    chmod +x "$tmp/$target"
+    mv "$tmp/$target" "$binpath"
+    info "installed archr to $binpath"
 
-  maybe_update_path
+    maybe_update_path
 
-  if "$binpath" --version >/dev/null 2>&1; then
-    info "archr $("$binpath" --version)"
+    if "$binpath" --version >/dev/null 2>&1; then
+      info "archr $("$binpath" --version)"
+    else
+      err "binary installed but failed to execute: $binpath"
+      err "this may be a glibc/arch mismatch; check https://github.com/haquiticos/archr/releases"
+    fi
+
+    # Install skill (best effort)
+    install_skill
   else
-    err "binary installed but failed to execute: $binpath"
-    err "this may be a glibc/arch mismatch; check https://github.com/haquiticos/archr/releases"
-    exit 1
+    err "failed to download archr binary for $target"
   fi
 
   printf '\n'
