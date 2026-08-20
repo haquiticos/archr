@@ -1,8 +1,8 @@
 [package]
 name = "archr-core"
-version = "0.4"
+version = "0.4.0"
 edition = "2021"
-description = "Headless ArchiMate 3.2 engine — validate, manipulate, and export models via CLI"
+description = "Headless ArchiMate 3.2 engine - validate, manipulate, and export models via CLI"
 license = "MIT"
 repository = "https://github.com/haquiticos/archr"
 homepage = "https://github.com/haquiticos/archr"
