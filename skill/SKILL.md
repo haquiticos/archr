@@ -7,10 +7,10 @@ description: >
   "generate .archimate", "architecture diagram".
 license: MIT
 compatibility: >
-  Requires the `archr` Rust binary (v1.0.0+) in PATH or set via ARCHR_BIN env var.
+  Requires the `archr` Rust binary (v0.4.0+) in PATH or set via ARCHR_BIN env var.
   Python >= 3.10 for the wrapper script. No pip dependencies.
 metadata:
-  version: "1.1.0"
+  version: "0.4.0"
   author: haquiticos
 ---
 
@@ -37,6 +37,12 @@ errors. The agent — not the human — authors the YAML.
 2. **Draft `model.yaml`** following the Example YAML Schema below. Every element needs a
    unique `id` (no spaces), a `name`, and a valid `kind`. Every relationship needs `source`
    and `target` referencing existing ids and a valid `kind`.
+   **Always author a `viewpoints:` section** — generate emits one diagram per viewpoint and
+   falls back to a single "Default View" when none exist. Define one overview viewpoint
+   (`kind: none`, `elements: []`) plus one per layer present in the model
+   (`motivation` / `business` / `application` / `implementation`). Connections render
+   automatically when both endpoints are in scope, so per-viewpoint `relationships:` is
+   optional.
 3. **Validate** through the wrapper:
    `python3 scripts/archr.py validate model.yaml`
    (or `archr validate --input model.yaml` if the binary is in PATH). Read the JSON on stdout.
@@ -82,6 +88,7 @@ model:
     - id: rel_002
       source: app_001
       target: fn_001
+      kind: Realization
   viewpoints:
     - id: vp_business
       name: Business Viewpoint
@@ -91,6 +98,10 @@ model:
         - fn_001
       relationships:
         - rel_001
+    - id: vp_overview
+      name: Overview
+      kind: none
+      elements: []
 ```
 
 > **Full schema:** See [`docs/schema.yaml`](../docs/schema.yaml) for all 62 element kinds, 11 relationship kinds, 6 viewpoint kinds, and validation rules.
@@ -142,7 +153,7 @@ For the full `ALLOWED` matrix (203 triples), see [SPEC.md](SPEC.md).
 | 0 | Success |
 | 1 | Validation error (JSON output on stdout) |
 | 2 | File I/O / YAML malformed / binary not found |
-| 3 | Binary version incompatible (requires ≥1.0.0) |
+| 3 | Binary version incompatible (requires ≥0.4.0) |
 | 4 | Subprocess timeout |
 | 64 | Invalid arguments |
 
