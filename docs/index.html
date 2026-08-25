@@ -38,8 +38,8 @@
     <p class="label">validate</p>
     <h2>Your model in YAML. One command to check it.</h2>
     <div class="diff">
-      <div class="bar"><span>model.yaml</span><span>62 types · 11 relationships · 8 layers</span></div>
-      <pre><span class="ln add">model:</span><span class="ln add">  name: CRM Architecture</span><span class="ln add">  viewpoint: Application</span><span class="ln add">  elements:</span><span class="ln add">    - id: app_001</span><span class="ln add">      name: CRM</span><span class="ln add">      kind: ApplicationComponent</span><span class="ln add">    - id: svc_001</span><span class="ln add">      name: Customer API</span><span class="ln add">      kind: ApplicationService</span><span class="ln add">  relationships:</span><span class="ln add">    - id: rel_001</span><span class="ln add">      source: app_001</span><span class="ln add">      target: svc_001</span><span class="ln add">      kind: Composition</span></pre>
+      <div class="bar"><span>model.yaml</span><span>62 types · 11 relationships · 6 viewpoints · 8 layers</span></div>
+      <pre><span class="ln add">model:</span><span class="ln add">  name: CRM Architecture</span><span class="ln add">  elements:</span><span class="ln add">    - id: app_001</span><span class="ln add">      name: CRM</span><span class="ln add">      kind: ApplicationComponent</span><span class="ln add">    - id: svc_001</span><span class="ln add">      name: Customer API</span><span class="ln add">      kind: ApplicationService</span><span class="ln add">  relationships:</span><span class="ln add">    - id: rel_001</span><span class="ln add">      source: app_001</span><span class="ln add">      target: svc_001</span><span class="ln add">      kind: Composition</span><span class="ln add">  viewpoints:</span><span class="ln add">    - id: vp_overview</span><span class="ln add">      name: Overview</span><span class="ln add">      kind: none</span><span class="ln add">      elements: []</span><span class="ln add">    - id: vp_app</span><span class="ln add">      name: Application View</span><span class="ln add">      kind: application</span><span class="ln add">      elements:</span><span class="ln add">        - app_001</span><span class="ln add">        - svc_001</span></pre>
     </div>
     <div class="term" style="margin-top:12px"><span class="p">$</span> archr validate model.yaml<br><span style="color:var(--grn)">{ "success": true, "errors": [] }</span></div>
     <p class="cmt" style="margin-top:14px">// exit 0 = valid, 1 = rule violation, 2 = malformed input.</p>
@@ -52,7 +52,7 @@
     <h2>Define in YAML. Then pick the command.</h2>
     <ol class="flow">
       <li><span><b>validate</b> <span class="d">— Check every relationship against ArchiMate 3.2 derivability rules.</span><br><code>archr validate --input model.yaml</code></span></li>
-      <li><span><b>generate</b> <span class="d">— Export <code>.archimate</code> Open Exchange XML for Archi.</span><br><code>archr generate --input model.yaml --output model.archimate</code></span></li>
+      <li><span><b>generate</b> <span class="d">— Export <code>.archimate</code> Open Exchange XML for Archi — one diagram per viewpoint.</span><br><code>archr generate --input model.yaml --output model.archimate</code></span></li>
       <li><span><b>parse</b> <span class="d">— Read existing <code>.archimate</code> files back into YAML.</span><br><code>archr parse --input model.archimate --output model.yaml</code></span></li>
       <li><span><b>diff</b> <span class="d">— Diff two models; see what was added, removed, or changed.</span><br><code>archr diff --old existing.archimate --new updated.yaml</code></span></li>
     </ol>
@@ -65,7 +65,7 @@
     <h2>Rust 1.74+. One line.</h2>
     <div class="term"><span class="c"># Cargo</span><br><span class="p">$</span> cargo install archr-core</div>
     <div class="others">
-      <div><h3>install script (macOS & Linux)</h3><code>curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash</code></div>
+      <div><h3>install script (macOS & Linux) binary and skill </h3><code>curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash</code></div>
       <div><h3>install script (Windows)</h3><code>powershell -c "irm https://raw.githubusercontent.com/haquiticos/archr/main/install/install.ps1 | iex"</code></div>
       <div><h3>build from source</h3><code>git clone https://github.com/haquiticos/archr &amp;&amp; cd archr &amp;&amp; cargo build --release</code></div>
       <div><h3>verify</h3><code>archr --version<span class="cmt">  # archr 1.1.0</span></code></div>
@@ -95,13 +95,7 @@
   <div class="wrap">
     <p class="label">agent_skill</p>
     <h2>Install. Talk to your agent. The skill does the rest.</h2>
-    <div class="term"><span class="c"># install once</span><br><span class="p">$</span> bash skill/install.sh<br><br><span class="c"># then just talk to your agent — it picks up the skill</span><br><span class="p">&gt;</span> create an ArchiMate model for a CRM system<br><span class="p">&gt;</span> validate it and export to .archimate<br><span style="color:var(--dim)">   &lt;skill atua: gera YAML, valida, exporta XML&gt;</span></div>
-    <div class="others">
-      <div><h3>omp</h3><code>cd archr &amp;&amp; bash skill/install.sh</code></div>
-      <div><h3>user-level</h3><code>bash skill/install.sh --user</code></div>
-      <div><h3>Claude Code</h3><code>register skill/ as an agent skill</code></div>
-      <div><h3>VS Code Copilot</h3><code>add skill/SKILL.md to your skills</code></div>
-    </div>
+    <div class="term"><span class="c"># then just talk to your agent — it picks up the skill</span><br><span class="p">&gt;</span> create an ArchiMate model for a CRM system, validate it and export to .archimate<br><span style="color:var(--dim)">   &lt;skill: create YAML, validate and export XML&gt;</span></div>
     <p class="cmt" style="margin-top:16px">// triggers automatically on "archimate", "archi", "model validation", "architecture diagram".<br>// wrapper is PEP 723, stdlib only, <code>ARCHR_BIN</code> for custom binary path.</p>
   </div>
 </section>
