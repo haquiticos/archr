@@ -24,7 +24,6 @@ pub enum XmlError {
     Parse(String),
 }
 
-
 // ===========================================================================
 // Serialization — Model → Archi native XML
 // ===========================================================================
@@ -230,7 +229,10 @@ fn emit_diagram(
     child_ids: &HashMap<ElementId, String>,
     spec: &DiagramSpec,
 ) {
-    let diagram_id = spec.id.map(str::to_string).unwrap_or_else(|| Uuid::new_v4().to_string());
+    let diagram_id = spec
+        .id
+        .map(str::to_string)
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
     let vp_attr = spec
         .viewpoint
         .map(|v| format!(" viewpoint=\"{}\"", xml_escape(v)))
@@ -621,8 +623,7 @@ mod tests {
         let model = Model::new("empty");
         let positions: HashMap<ElementId, (f64, f64, f64, f64)> = HashMap::new();
 
-        let xml =
-            model_to_xml(&model, &positions).expect("empty model should serialize");
+        let xml = model_to_xml(&model, &positions).expect("empty model should serialize");
 
         assert!(xml.contains("<archimate:model"));
         assert!(xml.contains("name=\"empty\""));
@@ -774,7 +775,10 @@ mod tests {
         assert!(xml.contains("id=\"rel-3\""));
 
         let parsed = xml_to_model(&xml).unwrap();
-        let ids: Vec<&str> = parsed.iter_elements().map(|e| e.original_id.as_str()).collect();
+        let ids: Vec<&str> = parsed
+            .iter_elements()
+            .map(|e| e.original_id.as_str())
+            .collect();
         assert_eq!(ids, vec!["actor-7", "crm-9"]);
         assert_eq!(parsed.iter_relations().next().unwrap().original_id, "rel-3");
     }

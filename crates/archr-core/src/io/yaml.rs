@@ -24,7 +24,6 @@ struct YamlModelInner {
     viewpoints: Vec<ViewpointDefinition>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YamlElement {
     pub id: String,
@@ -177,7 +176,6 @@ pub fn parse_yaml(input: &str) -> ParseResult<Model> {
         let rel_id = model.link_with_id(&rel.id, source, target, kind);
         str_to_rel.insert(rel.id.clone(), rel_id);
     }
-
 
     // Attach viewpoint definitions to the model so serialization can emit one
     // diagram per viewpoint.
@@ -366,11 +364,19 @@ model:
         assert_eq!(model.relation_count(), reparsed.relation_count());
 
         // Original ids survive the round trip verbatim.
-        let elem_ids: Vec<&str> = reparsed.iter_elements().map(|e| e.original_id.as_str()).collect();
+        let elem_ids: Vec<&str> = reparsed
+            .iter_elements()
+            .map(|e| e.original_id.as_str())
+            .collect();
         assert_eq!(elem_ids, vec!["e1", "e2"]);
         let rel = reparsed.iter_relations().next().unwrap();
         assert_eq!(rel.original_id, "r1");
-        assert_eq!(model.element(reparsed.iter_relations().next().unwrap().source).original_id, "e1");
+        assert_eq!(
+            model
+                .element(reparsed.iter_relations().next().unwrap().source)
+                .original_id,
+            "e1"
+        );
     }
 
     #[test]
@@ -437,7 +443,11 @@ model:
         let serialized = model_to_yaml(&model);
         let reparsed = parse_yaml(&serialized).unwrap();
 
-        assert_eq!(reparsed.viewpoints().len(), 1, "viewpoints must survive YAML round trip");
+        assert_eq!(
+            reparsed.viewpoints().len(),
+            1,
+            "viewpoints must survive YAML round trip"
+        );
         let vp = &reparsed.viewpoints()[0];
         assert_eq!(vp.id, "vp1");
         assert_eq!(vp.name, "Business view");
@@ -445,7 +455,6 @@ model:
         assert_eq!(vp.elements, vec!["e1"]);
         assert_eq!(vp.relationships, vec!["r1"]);
     }
-
 }
 
 #[test]

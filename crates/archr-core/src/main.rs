@@ -5,8 +5,8 @@
 use archr_core::io::yaml::SchemaError;
 use archr_core::{
     diff::ModelDiffAnalyzer,
-    io::{xml, yaml},
     io::xml::XmlError,
+    io::{xml, yaml},
     layout::LayoutResolver,
     validate::validate_model,
     Model,
@@ -81,7 +81,10 @@ fn main() -> ExitCode {
 /// Why a model could not be loaded from a file.
 enum LoadError {
     /// The file could not be read.
-    Read { path: String, source: std::io::Error },
+    Read {
+        path: String,
+        source: std::io::Error,
+    },
     /// YAML failed schema validation.
     Yaml(Vec<SchemaError>),
     /// The Archi XML could not be parsed.
@@ -103,15 +106,19 @@ impl std::fmt::Display for LoadError {
 
 /// Loads a YAML model: path → Model, or one structured error.
 fn load_yaml(path: &str) -> Result<Model, LoadError> {
-    let s = fs::read_to_string(path)
-        .map_err(|source| LoadError::Read { path: path.into(), source })?;
+    let s = fs::read_to_string(path).map_err(|source| LoadError::Read {
+        path: path.into(),
+        source,
+    })?;
     yaml::parse_yaml(&s).map_err(LoadError::Yaml)
 }
 
 /// Loads an Archi XML model: path → Model, or one structured error.
 fn load_xml(path: &str) -> Result<Model, LoadError> {
-    let s = fs::read_to_string(path)
-        .map_err(|source| LoadError::Read { path: path.into(), source })?;
+    let s = fs::read_to_string(path).map_err(|source| LoadError::Read {
+        path: path.into(),
+        source,
+    })?;
     xml::xml_to_model(&s).map_err(LoadError::Xml)
 }
 
