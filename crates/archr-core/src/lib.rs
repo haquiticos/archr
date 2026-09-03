@@ -10,6 +10,7 @@ mod test_ecore;
 pub mod validate;
 
 // Re-export key I/O functions for tests
+pub use model::Model;
 pub use io::xml::{model_to_xml, xml_to_model};
 pub use io::yaml::{model_to_yaml, parse_yaml};
 // Re-export core enums

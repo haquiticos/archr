@@ -6,8 +6,10 @@ use archr_core::io::yaml::SchemaError;
 use archr_core::{
     diff::ModelDiffAnalyzer,
     io::{xml, yaml},
+    io::xml::XmlError,
     layout::LayoutResolver,
     validate::validate_model,
+    Model,
 };
 use clap::{Parser, Subcommand};
 use std::collections::HashMap;
@@ -73,21 +75,65 @@ fn main() -> ExitCode {
 }
 
 // ---------------------------------------------------------------------------
+// Model-loading pipeline — one interface, every subcommand
+// ---------------------------------------------------------------------------
+
+/// Why a model could not be loaded from a file.
+enum LoadError {
+    /// The file could not be read.
+    Read { path: String, source: std::io::Error },
+    /// YAML failed schema validation.
+    Yaml(Vec<SchemaError>),
+    /// The Archi XML could not be parsed.
+    Xml(XmlError),
+}
+
+impl std::fmt::Display for LoadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LoadError::Read { path, source } => write!(f, "cannot read {path}: {source}"),
+            LoadError::Yaml(errors) => {
+                let msgs: Vec<String> = errors.iter().map(yaml::schema_error_message).collect();
+                write!(f, "schema validation failed: {}", msgs.join("; "))
+            }
+            LoadError::Xml(e) => write!(f, "XML parse failed: {e}"),
+        }
+    }
+}
+
+/// Loads a YAML model: path → Model, or one structured error.
+fn load_yaml(path: &str) -> Result<Model, LoadError> {
+    let s = fs::read_to_string(path)
+        .map_err(|source| LoadError::Read { path: path.into(), source })?;
+    yaml::parse_yaml(&s).map_err(LoadError::Yaml)
+}
+
+/// Loads an Archi XML model: path → Model, or one structured error.
+fn load_xml(path: &str) -> Result<Model, LoadError> {
+    let s = fs::read_to_string(path)
+        .map_err(|source| LoadError::Read { path: path.into(), source })?;
+    xml::xml_to_model(&s).map_err(LoadError::Xml)
+}
+
+/// The uniform failure path: one diagnostic line on stderr, exit code 2.
+fn fail(error: &LoadError) -> ExitCode {
+    eprintln!("error: {error}");
+    ExitCode::from(2)
+}
+
+/// Writes a generated artifact to disk.
+fn store(path: &str, content: &str) -> Result<(), String> {
+    fs::write(path, content).map_err(|e| format!("cannot write {path}: {e}"))
+}
+// ---------------------------------------------------------------------------
 // validate
 // ---------------------------------------------------------------------------
 
 fn run_validate(input_path: &str) -> ExitCode {
-    let yaml_str = match fs::read_to_string(input_path) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: cannot read {input_path}: {e}");
-            return ExitCode::from(2);
-        }
-    };
-
-    let model = match yaml::parse_yaml(&yaml_str) {
+    let model = match load_yaml(input_path) {
         Ok(m) => m,
-        Err(schema_errors) => {
+        Err(e @ (LoadError::Read { .. } | LoadError::Xml(_))) => return fail(&e),
+        Err(LoadError::Yaml(schema_errors)) => {
             // Schema errors → success=false with structured errors.
             // If YAML is malformed (MalformedYaml), filter out schema errors.
             let has_malformed_yaml = schema_errors
@@ -146,20 +192,9 @@ fn run_validate(input_path: &str) -> ExitCode {
 // ---------------------------------------------------------------------------
 
 fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
-    let yaml_str = match fs::read_to_string(input_path) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: cannot read {input_path}: {e}");
-            return ExitCode::from(2);
-        }
-    };
-
-    let model = match yaml::parse_yaml(&yaml_str) {
+    let model = match load_yaml(input_path) {
         Ok(m) => m,
-        Err(errors) => {
-            eprintln!("error: schema validation failed: {:?}", errors);
-            return ExitCode::from(2);
-        }
+        Err(e) => return fail(&e),
     };
 
     // Calculate layout positions.
@@ -184,8 +219,8 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
         }
     };
 
-    if let Err(e) = fs::write(output_path, &xml) {
-        eprintln!("error: cannot write {output_path}: {e}");
+    if let Err(msg) = store(output_path, &xml) {
+        eprintln!("error: {msg}");
         return ExitCode::from(2);
     }
 
@@ -202,24 +237,13 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
 // ---------------------------------------------------------------------------
 
 fn run_parse(input_path: &str, output_path: &str) -> ExitCode {
-    let xml_str = match fs::read_to_string(input_path) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: cannot read {input_path}: {e}");
-            return ExitCode::from(2);
-        }
-    };
-
-    let model = match xml::xml_to_model(&xml_str) {
+    let model = match load_xml(input_path) {
         Ok(m) => m,
-        Err(e) => {
-            eprintln!("error: XML parse failed: {e}");
-            return ExitCode::from(2);
-        }
+        Err(e) => return fail(&e),
     };
     let yaml_out = yaml::model_to_yaml(&model);
-    if let Err(e) = fs::write(output_path, &yaml_out) {
-        eprintln!("error: cannot write {output_path}: {e}");
+    if let Err(msg) = store(output_path, &yaml_out) {
+        eprintln!("error: {msg}");
         return ExitCode::from(2);
     }
 
@@ -236,38 +260,15 @@ fn run_parse(input_path: &str, output_path: &str) -> ExitCode {
 // ---------------------------------------------------------------------------
 
 fn run_diff(old_path: &str, new_path: &str) -> ExitCode {
-    // Read existing model (XML).
-    let xml_str = match fs::read_to_string(old_path) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: cannot read {old_path}: {e}");
-            return ExitCode::from(2);
-        }
-    };
-    let existing = match xml::xml_to_model(&xml_str) {
+    // Existing model (XML) and new model (YAML), through one load interface.
+    let existing = match load_xml(old_path) {
         Ok(m) => m,
-        Err(e) => {
-            eprintln!("error: cannot parse {old_path}: {e}");
-            return ExitCode::from(2);
-        }
+        Err(e) => return fail(&e),
     };
-
-    // Read new model (YAML).
-    let yaml_str = match fs::read_to_string(new_path) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: cannot read {new_path}: {e}");
-            return ExitCode::from(2);
-        }
-    };
-    let new = match yaml::parse_yaml(&yaml_str) {
+    let new = match load_yaml(new_path) {
         Ok(m) => m,
-        Err(errors) => {
-            eprintln!("error: schema validation failed: {:?}", errors);
-            return ExitCode::from(2);
-        }
+        Err(e) => return fail(&e),
     };
-
     let analyzer = ModelDiffAnalyzer::from_existing(&existing);
     match analyzer.analyze_update(&new) {
         Ok(report) => {
