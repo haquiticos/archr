@@ -7,10 +7,10 @@ description: >
   "generate .archimate", "architecture diagram".
 license: MIT
 compatibility: >
-  Requires the `archr` Rust binary (v0.4.0+) in PATH or set via ARCHR_BIN env var.
+  Requires the `archr` Rust binary (v0.5.0+) in PATH or set via ARCHR_BIN env var.
   Python >= 3.10 for the wrapper script. No pip dependencies.
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
   author: haquiticos
 ---
 
@@ -153,7 +153,7 @@ For the full `ALLOWED` matrix (203 triples), see [SPEC.md](SPEC.md).
 | 0 | Success |
 | 1 | Validation error (JSON output on stdout) |
 | 2 | File I/O / YAML malformed / binary not found |
-| 3 | Binary version incompatible (requires ≥0.4.0) |
+| 3 | Binary version incompatible (requires ≥0.5.0) |
 | 4 | Subprocess timeout |
 | 64 | Invalid arguments |
 

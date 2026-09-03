@@ -2,7 +2,7 @@
 #
 # Usage (PowerShell):
 #   powershell -c "irm https://raw.githubusercontent.com/haquiticos/archr/main/install/install.ps1 | iex"
-#   iex "& {$(irm https://raw.githubusercontent.com/haquiticos/archr/main/install/install.ps1)} -Version v1.0.0"
+#   iex "& {$(irm https://raw.githubusercontent.com/haquiticos/archr/main/install/install.ps1)} -Version v0.5"
 #
 # Installs the prebuilt archr.exe into $env:ARCHR_INSTALL\bin (default $env:USERPROFILE\.archr\bin)
 # and appends it to the user's PATH.

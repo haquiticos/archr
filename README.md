@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/insta
 Pin a version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v1.1.0"
+curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v0.5"
 ```
 
 ### Install script (Windows)
