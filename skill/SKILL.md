@@ -10,7 +10,7 @@ compatibility: >
   Requires the `archr` Rust binary (v0.5.0+) in PATH or set via ARCHR_BIN env var.
   Python >= 3.10 for the wrapper script. No pip dependencies.
 metadata:
-  version: "0.5.0"
+  version: "0.5.1"
   author: haquiticos
 ---
 

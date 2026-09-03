@@ -3,7 +3,7 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash
-#   curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v0.5"
+#   curl -fsSL https://raw.githubusercontent.com/haquiticos/archr/main/install/install.sh | bash -s "v0.5.1"
 #
 # Installs the prebuilt `archr` binary into $ARCHR_INSTALL/bin (default $HOME/.archr/bin)
 # and updates shell rc files to add it to PATH. Also installs the archr skill
@@ -15,7 +15,7 @@ set -euo pipefail
 ARCHR_REPO="haquiticos/archr"
 ARCHR_INSTALL="${ARCHR_INSTALL:-$HOME/.archr}"
 ARCHR_SKILLS_DIR="${ARCHR_SKILLS_DIR:-$HOME/.agents/skills}"
-ARCHR_VERSION="${1:-v0.5}"
+ARCHR_VERSION="${1:-v0.5.1}"
 
 err()  { printf "\033[31merror:\033[0m %s\n" "$*" >&2; }
 info() { printf "\033[32m==>\033[0m %s\n" "$*" >&2; }
