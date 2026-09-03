@@ -3,7 +3,6 @@
 //! Uses typed newtype indices (`ElementId`, `RelationId`) for O(1) `Vec` access
 //! instead of `Rc<RefCell<>>` or string-keyed `HashMap`s.
 
-use crate::io::yaml::YamlViewpointDefinition;
 use std::ops::Index;
 use std::str::FromStr;
 
@@ -711,6 +710,64 @@ pub struct ElementId(pub usize);
 pub struct RelationId(pub usize);
 
 // ---------------------------------------------------------------------------
+// Viewpoint (domain)
+// ---------------------------------------------------------------------------
+
+/// The Archi viewpoint identifier a diagram is drawn against.
+///
+/// Variant names match the lowercase `viewpoint` attribute of Archi native XML
+/// and the YAML `kind` field, so one representation serves both adapters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ViewpointKind {
+    None,
+    Business,
+    Application,
+    Implementation,
+    Motivation,
+    Compliance,
+}
+
+impl ViewpointKind {
+    /// The lowercase Archi `viewpoint` attribute value for this kind.
+    pub fn as_viewpoint_name(self) -> &'static str {
+        match self {
+            ViewpointKind::None => "none",
+            ViewpointKind::Business => "business",
+            ViewpointKind::Application => "application",
+            ViewpointKind::Implementation => "implementation",
+            ViewpointKind::Motivation => "motivation",
+            ViewpointKind::Compliance => "compliance",
+        }
+    }
+
+    /// Parses a lowercase Archi viewpoint attribute value.
+    pub fn from_viewpoint_name(name: &str) -> Option<Self> {
+        Some(match name {
+            "none" => ViewpointKind::None,
+            "business" => ViewpointKind::Business,
+            "application" => ViewpointKind::Application,
+            "implementation" => ViewpointKind::Implementation,
+            "motivation" => ViewpointKind::Motivation,
+            "compliance" => ViewpointKind::Compliance,
+            _ => return None,
+        })
+    }
+}
+
+/// A named viewpoint attached to a [`Model`]: a scope of elements and
+/// relationships (by their original ids) rendered as one diagram.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ViewpointDefinition {
+    pub id: String,
+    pub name: String,
+    pub kind: ViewpointKind,
+    #[serde(default)]
+    pub elements: Vec<String>,
+    #[serde(default)]
+    pub relationships: Vec<String>,
+}
+// ---------------------------------------------------------------------------
 // Model graph (Arena pattern)
 // ---------------------------------------------------------------------------
 
@@ -722,21 +779,30 @@ pub struct Model {
     pub name: String,
     elements: Vec<Element>,
     relations: Vec<Relationship>,
-    viewpoints: Vec<YamlViewpointDefinition>,
+    viewpoints: Vec<ViewpointDefinition>,
 }
 
 /// A node in the ArchiMate graph.
+///
+/// `id` is the arena index used for O(1) traversal; `original_id` is the
+/// identifier the element carries in its source file (YAML `id` / XML `id`),
+/// preserved verbatim so conversions round-trip faithfully. Models built
+/// programmatically synthesize `e_N` originals.
 #[derive(Debug, Clone)]
 pub struct Element {
     pub id: ElementId,
+    pub original_id: String,
     pub name: String,
     pub kind: ElementKind,
 }
 
 /// A directed edge in the ArchiMate graph.
+///
+/// See [`Element`] for the `id`/`original_id` split.
 #[derive(Debug, Clone)]
 pub struct Relationship {
     pub id: RelationId,
+    pub original_id: String,
     pub source: ElementId,
     pub target: ElementId,
     pub kind: RelationKind,
@@ -753,22 +819,47 @@ impl Model {
         }
     }
 
-    /// Adds an element and returns its typed index.
+    /// Adds an element, synthesizing its original id as `e_N`.
     pub fn add_element(&mut self, name: &str, kind: ElementKind) -> ElementId {
+        let original_id = format!("e_{}", self.elements.len());
+        self.add_element_with_id(original_id, name, kind)
+    }
+
+    /// Adds an element carrying the original id it has in its source file.
+    pub fn add_element_with_id(
+        &mut self,
+        original_id: impl Into<String>,
+        name: &str,
+        kind: ElementKind,
+    ) -> ElementId {
         let id = ElementId(self.elements.len());
         self.elements.push(Element {
             id,
+            original_id: original_id.into(),
             name: name.to_string(),
             kind,
         });
         id
     }
 
-    /// Adds a relationship and returns its typed index.
+    /// Adds a relationship, synthesizing its original id as `r_N`.
     pub fn link(&mut self, source: ElementId, target: ElementId, kind: RelationKind) -> RelationId {
+        let original_id = format!("r_{}", self.relations.len());
+        self.link_with_id(original_id, source, target, kind)
+    }
+
+    /// Adds a relationship carrying the original id it has in its source file.
+    pub fn link_with_id(
+        &mut self,
+        original_id: impl Into<String>,
+        source: ElementId,
+        target: ElementId,
+        kind: RelationKind,
+    ) -> RelationId {
         let id = RelationId(self.relations.len());
         self.relations.push(Relationship {
             id,
+            original_id: original_id.into(),
             source,
             target,
             kind,
@@ -807,12 +898,12 @@ impl Model {
     }
 
     /// Viewpoint definitions attached to the model.
-    pub fn viewpoints(&self) -> &[YamlViewpointDefinition] {
+    pub fn viewpoints(&self) -> &[ViewpointDefinition] {
         &self.viewpoints
     }
 
     /// Replace the model's viewpoint definitions.
-    pub fn set_viewpoints(&mut self, viewpoints: Vec<YamlViewpointDefinition>) {
+    pub fn set_viewpoints(&mut self, viewpoints: Vec<ViewpointDefinition>) {
         self.viewpoints = viewpoints;
     }
 }

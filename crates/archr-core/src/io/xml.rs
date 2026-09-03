@@ -6,7 +6,10 @@
 //! relationships live in the `Relations` folder as `<element xsi:type="archimate:*Relationship">`,
 //! and the diagram view uses `<child>`/`<sourceConnection>` nesting.
 
-use crate::model::{ElementId, ElementKind, ElementLayer, Model, RelationId, RelationKind};
+use crate::model::{
+    ElementId, ElementKind, ElementLayer, Model, RelationId, RelationKind, ViewpointDefinition,
+    ViewpointKind,
+};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write as _;
 use thiserror::Error;
@@ -21,15 +24,6 @@ pub enum XmlError {
     Parse(String),
 }
 
-/// Parsed Model with original XML ID mappings preserved for round-trip fidelity.
-pub type XmlParseResult = Result<
-    (
-        Model,
-        HashMap<String, ElementId>,
-        HashMap<String, RelationId>,
-    ),
-    XmlError,
->;
 
 // ===========================================================================
 // Serialization — Model → Archi native XML
@@ -38,48 +32,29 @@ pub type XmlParseResult = Result<
 /// Serialize a Model to Archi native XML.
 ///
 /// `positions` maps element id to `(x, y, width, height)` for the diagram view.
-/// When `_elem_id_map`/`_rel_id_map` are provided, original string IDs are used
-/// instead of fresh UUIDs, preserving identifiers across round-trip conversion.
+/// Element and relationship ids come verbatim from the Model's original ids,
+/// so conversions round-trip faithfully.
 pub fn model_to_xml(
     model: &Model,
     positions: &HashMap<ElementId, (f64, f64, f64, f64)>,
-    _elem_id_map: Option<&HashMap<String, ElementId>>,
-    _rel_id_map: Option<&HashMap<String, RelationId>>,
 ) -> Result<String, XmlError> {
     let model_id = Uuid::new_v4();
 
-    // Reverse maps for lookup by internal ID; fall back to UUIDs when no mapping.
-    let elem_rev: HashMap<&ElementId, &str> = _elem_id_map
-        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
-        .unwrap_or_default();
-    let rel_rev: HashMap<&RelationId, &str> = _rel_id_map
-        .map(|m| m.iter().map(|(k, v)| (v, k.as_str())).collect())
-        .unwrap_or_default();
-
-    // Stable string IDs for cross-referencing (elements, relationships, diagram objects).
+    // Stable string IDs for cross-referencing (elements, relationships,
+    // diagram objects): the Model's original ids, verbatim.
     let elem_ids: HashMap<ElementId, String> = model
         .iter_elements()
-        .map(|e| {
-            (
-                e.id,
-                elem_rev
-                    .get(&e.id)
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
-            )
-        })
+        .map(|e| (e.id, e.original_id.clone()))
         .collect();
     let rel_ids: HashMap<RelationId, String> = model
         .iter_relations()
-        .map(|r| {
-            (
-                r.id,
-                rel_rev
-                    .get(&r.id)
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|| Uuid::new_v4().to_string()),
-            )
-        })
+        .map(|r| (r.id, r.original_id.clone()))
+        .collect();
+
+    // Viewpoint member refs are original ids; resolve them to arena ids once.
+    let elem_by_original: HashMap<&str, ElementId> = model
+        .iter_elements()
+        .map(|e| (e.original_id.as_str(), e.id))
         .collect();
     let child_ids: HashMap<ElementId, String> = model
         .iter_elements()
@@ -142,6 +117,7 @@ pub fn model_to_xml(
                 name: "Default View",
                 viewpoint: None,
                 filter: None,
+                id: None,
             };
             emit_diagram(
                 &mut xml, model, positions, &elem_ids, &rel_ids, &child_ids, &spec,
@@ -155,7 +131,7 @@ pub fn model_to_xml(
                     Some(
                         vp.elements
                             .iter()
-                            .filter_map(|id| _elem_id_map.and_then(|m| m.get(id)).copied())
+                            .filter_map(|id| elem_by_original.get(id.as_str()).copied())
                             .collect(),
                     )
                 };
@@ -163,6 +139,7 @@ pub fn model_to_xml(
                     name: &vp.name,
                     viewpoint: Some(vp.kind.as_viewpoint_name()),
                     filter: filter.as_ref(),
+                    id: Some(&vp.id),
                 };
                 emit_diagram(
                     &mut xml, model, positions, &elem_ids, &rel_ids, &child_ids, &spec,
@@ -238,6 +215,9 @@ struct DiagramSpec<'a> {
     /// Restrict DiagramObjects to just these elements (when set); connections
     /// appear only when both endpoints are in scope.
     filter: Option<&'a HashSet<ElementId>>,
+    /// Diagram id; defaults to a fresh UUID. Viewpoint diagrams reuse the
+    /// viewpoint's original id so it survives XML round trips.
+    id: Option<&'a str>,
 }
 
 /// Emit one `ArchimateDiagramModel` inside an already-open Views folder.
@@ -250,7 +230,7 @@ fn emit_diagram(
     child_ids: &HashMap<ElementId, String>,
     spec: &DiagramSpec,
 ) {
-    let diagram_id = Uuid::new_v4();
+    let diagram_id = spec.id.map(str::to_string).unwrap_or_else(|| Uuid::new_v4().to_string());
     let vp_attr = spec
         .viewpoint
         .map(|v| format!(" viewpoint=\"{}\"", xml_escape(v)))
@@ -432,6 +412,30 @@ struct XmlElement {
     source: Option<String>,
     #[serde(rename = "@target", default)]
     target: Option<String>,
+    /// Diagram views only: the Archi viewpoint this diagram is drawn against.
+    #[serde(rename = "@viewpoint", default)]
+    viewpoint: Option<String>,
+    /// Diagram views only: the diagram objects placed on the view.
+    #[serde(rename = "child", default)]
+    children: Vec<XmlChild>,
+}
+
+/// A `<child>` (DiagramObject) inside a diagram view; may nest for containers.
+#[derive(Debug, serde::Deserialize)]
+struct XmlChild {
+    #[serde(rename = "@archimateElement", default)]
+    archimate_element: Option<String>,
+    #[serde(rename = "sourceConnection", default)]
+    connections: Vec<XmlConnection>,
+    #[serde(rename = "child", default)]
+    children: Vec<XmlChild>,
+}
+
+/// A `<sourceConnection>` (Connection) inside a diagram object.
+#[derive(Debug, serde::Deserialize)]
+struct XmlConnection {
+    #[serde(rename = "@archimateRelationship", default)]
+    archimate_relationship: Option<String>,
 }
 
 /// Recursively collect all `<element>` children from a folder tree.
@@ -449,20 +453,11 @@ fn strip_archimate_prefix(s: &str) -> &str {
 
 /// Deserialize Archi native XML into a Model.
 pub fn xml_to_model(xml: &str) -> Result<Model, XmlError> {
-    Ok(parse_xml(xml)?.0)
+    parse_xml(xml)
 }
 
-/// Deserialize Archi native XML into a Model, preserving original XML IDs.
-///
-/// Returns the Model along with mappings from original XML identifiers to
-/// internal ElementIds and RelationIds, enabling faithful round-trip conversion.
-pub fn xml_to_model_preserving_ids(xml: &str) -> XmlParseResult {
-    let (model, elem_ids, rel_ids) = parse_xml(xml)?;
-    Ok((model, elem_ids, rel_ids))
-}
-
-/// Core XML parser: returns Model plus original-ID mappings.
-fn parse_xml(xml: &str) -> XmlParseResult {
+/// Core XML parser: deserializes into a self-contained Model.
+fn parse_xml(xml: &str) -> Result<Model, XmlError> {
     let xml_model: XmlModel = quick_xml::de::from_str(xml)
         .map_err(|e| XmlError::Parse(format!("Failed to parse XML: {:?}", e)))?;
 
@@ -493,7 +488,7 @@ fn parse_xml(xml: &str) -> XmlParseResult {
             None => continue,
         };
 
-        let new_id = model.add_element(&elem.name, kind);
+        let new_id = model.add_element_with_id(&elem.id, &elem.name, kind);
         id_to_element.insert(elem.id.clone(), new_id);
     }
 
@@ -519,11 +514,60 @@ fn parse_xml(xml: &str) -> XmlParseResult {
             .and_then(|s| id_to_element.get(s).copied())
             .ok_or_else(|| XmlError::Parse(format!("Unknown target element: {:?}", elem.target)))?;
 
-        let rel_id = model.link(source, target, kind);
+        let rel_id = model.link_with_id(&elem.id, source, target, kind);
         id_to_relation.insert(elem.id.clone(), rel_id);
     }
 
-    Ok((model, id_to_element, id_to_relation))
+    // Reconstruct viewpoint definitions from diagram views so the XML → Model
+    // direction preserves what parse_yaml and model_to_xml already handle.
+    let mut viewpoints: Vec<ViewpointDefinition> = Vec::new();
+    for elem in &all_elements {
+        if strip_archimate_prefix(&elem.xsi_type) != "ArchimateDiagramModel" {
+            continue;
+        }
+        // Anonymous diagrams (no viewpoint attribute) carry no viewpoint
+        // state — re-reading them must not invent a ViewpointDefinition.
+        let Some(vp_name) = elem.viewpoint.as_deref() else {
+            continue;
+        };
+        let kind = ViewpointKind::from_viewpoint_name(vp_name).unwrap_or(ViewpointKind::None);
+        let mut elements: Vec<String> = Vec::new();
+        let mut relationships: Vec<String> = Vec::new();
+        collect_view_refs(&elem.children, &mut elements, &mut relationships);
+        let mut seen_elems = HashSet::new();
+        elements.retain(|id| id_to_element.contains_key(id) && seen_elems.insert(id.clone()));
+        let mut seen_rels = HashSet::new();
+        relationships.retain(|id| id_to_relation.contains_key(id) && seen_rels.insert(id.clone()));
+        viewpoints.push(ViewpointDefinition {
+            id: elem.id.clone(),
+            name: elem.name.clone(),
+            kind,
+            elements,
+            relationships,
+        });
+    }
+    model.set_viewpoints(viewpoints);
+    Ok(model)
+}
+
+/// Collects the original element and relationship ids referenced by a
+/// diagram's (possibly nested) children, in document order.
+fn collect_view_refs(
+    children: &[XmlChild],
+    elements: &mut Vec<String>,
+    relationships: &mut Vec<String>,
+) {
+    for child in children {
+        if let Some(elem) = &child.archimate_element {
+            elements.push(elem.clone());
+        }
+        for conn in &child.connections {
+            if let Some(rel) = &conn.archimate_relationship {
+                relationships.push(rel.clone());
+            }
+        }
+        collect_view_refs(&child.children, elements, relationships);
+    }
 }
 
 // ===========================================================================
@@ -549,7 +593,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions, None, None).unwrap();
+        let xml = model_to_xml(&model, &positions).unwrap();
 
         // Native Archi namespace and root element.
         assert!(xml.contains("xmlns:archimate=\"http://www.archimatetool.com/archimate\""));
@@ -578,7 +622,7 @@ mod tests {
         let positions: HashMap<ElementId, (f64, f64, f64, f64)> = HashMap::new();
 
         let xml =
-            model_to_xml(&model, &positions, None, None).expect("empty model should serialize");
+            model_to_xml(&model, &positions).expect("empty model should serialize");
 
         assert!(xml.contains("<archimate:model"));
         assert!(xml.contains("name=\"empty\""));
@@ -613,7 +657,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions, None, None).unwrap();
+        let xml = model_to_xml(&model, &positions).unwrap();
 
         // Collect all id="..." values.
         let ids: Vec<&str> = xml
@@ -646,7 +690,7 @@ mod tests {
         .into_iter()
         .collect();
 
-        let xml = model_to_xml(&model, &positions, None, None).unwrap();
+        let xml = model_to_xml(&model, &positions).unwrap();
 
         // Exactly three diagram objects.
         let child_count = xml.matches("xsi:type=\"archimate:DiagramObject\"").count();
@@ -675,7 +719,7 @@ mod tests {
         model.add_element("Goal1", ElementKind::Goal);
 
         let positions = HashMap::new();
-        let xml = model_to_xml(&model, &positions, None, None).unwrap();
+        let xml = model_to_xml(&model, &positions).unwrap();
 
         assert!(xml.contains("type=\"business\""));
         assert!(xml.contains("type=\"application\""));
@@ -693,7 +737,7 @@ mod tests {
         model.link(b, c, RelationKind::Realization);
 
         let positions = HashMap::new();
-        let xml = model_to_xml(&model, &positions, None, None).unwrap();
+        let xml = model_to_xml(&model, &positions).unwrap();
         let parsed = xml_to_model(&xml).unwrap();
 
         assert_eq!(parsed.name, "Round Trip");
@@ -716,5 +760,61 @@ mod tests {
         let rel_kinds: Vec<RelationKind> = parsed.iter_relations().map(|r| r.kind).collect();
         assert!(rel_kinds.contains(&RelationKind::Serving));
         assert!(rel_kinds.contains(&RelationKind::Realization));
+    }
+    #[test]
+    fn test_xml_original_id_round_trip() {
+        let mut model = Model::new("Ids");
+        let a = model.add_element_with_id("actor-7", "Actor", ElementKind::BusinessActor);
+        let b = model.add_element_with_id("crm-9", "CRM", ElementKind::ApplicationComponent);
+        model.link_with_id("rel-3", a, b, RelationKind::Serving);
+
+        let positions = HashMap::new();
+        let xml = model_to_xml(&model, &positions).unwrap();
+        assert!(xml.contains("id=\"actor-7\""));
+        assert!(xml.contains("id=\"rel-3\""));
+
+        let parsed = xml_to_model(&xml).unwrap();
+        let ids: Vec<&str> = parsed.iter_elements().map(|e| e.original_id.as_str()).collect();
+        assert_eq!(ids, vec!["actor-7", "crm-9"]);
+        assert_eq!(parsed.iter_relations().next().unwrap().original_id, "rel-3");
+    }
+
+    #[test]
+    fn test_xml_viewpoint_round_trip() {
+        let mut model = Model::new("Views");
+        let a = model.add_element_with_id("e1", "Actor", ElementKind::BusinessActor);
+        let b = model.add_element_with_id("e2", "CRM", ElementKind::ApplicationComponent);
+        model.link_with_id("r1", a, b, RelationKind::Serving);
+        model.set_viewpoints(vec![ViewpointDefinition {
+            id: "vp1".into(),
+            name: "Coarse".into(),
+            kind: ViewpointKind::Business,
+            elements: vec!["e1".into(), "e2".into()],
+            relationships: vec!["r1".into()],
+        }]);
+
+        let positions = HashMap::new();
+        let xml = model_to_xml(&model, &positions).unwrap();
+        assert!(xml.contains("viewpoint=\"business\""));
+
+        let parsed = xml_to_model(&xml).unwrap();
+        assert_eq!(parsed.viewpoints().len(), 1);
+        let vp = &parsed.viewpoints()[0];
+        assert_eq!(vp.kind, ViewpointKind::Business);
+        assert_eq!(vp.elements, vec!["e1".to_string(), "e2".to_string()]);
+        assert_eq!(vp.relationships, vec!["r1".to_string()]);
+    }
+
+    #[test]
+    fn test_anonymous_default_view_is_not_a_viewpoint() {
+        let mut model = Model::new("No Views");
+        model.add_element_with_id("x1", "Solo", ElementKind::Goal);
+
+        let positions = HashMap::new();
+        let xml = model_to_xml(&model, &positions).unwrap();
+        assert!(!xml.contains("viewpoint=\""));
+
+        let parsed = xml_to_model(&xml).unwrap();
+        assert!(parsed.viewpoints().is_empty());
     }
 }

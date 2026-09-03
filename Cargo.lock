@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "archr-core"
-version = "1.1.0"
+version = "0.4.0"
 dependencies = [
  "clap",
  "petgraph",

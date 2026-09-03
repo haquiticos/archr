@@ -154,8 +154,8 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
         }
     };
 
-    let (model, elem_id_map, rel_id_map, _, _, _) = match yaml::parse_yaml_with_ids(&yaml_str) {
-        Ok(parsed) => parsed,
+    let model = match yaml::parse_yaml(&yaml_str) {
+        Ok(m) => m,
         Err(errors) => {
             eprintln!("error: schema validation failed: {:?}", errors);
             return ExitCode::from(2);
@@ -176,7 +176,7 @@ fn run_generate(input_path: &str, output_path: &str) -> ExitCode {
         .map(|(&id, pos)| (id, (pos.0, pos.1, 120.0, 55.0)))
         .collect::<HashMap<_, _>>();
 
-    let xml = match xml::model_to_xml(&model, &positions, Some(&elem_id_map), Some(&rel_id_map)) {
+    let xml = match xml::model_to_xml(&model, &positions) {
         Ok(x) => x,
         Err(e) => {
             eprintln!("error: XML serialization failed: {e}");
@@ -210,14 +210,14 @@ fn run_parse(input_path: &str, output_path: &str) -> ExitCode {
         }
     };
 
-    let (model, elem_ids, rel_ids) = match xml::xml_to_model_preserving_ids(&xml_str) {
+    let model = match xml::xml_to_model(&xml_str) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("error: XML parse failed: {e}");
             return ExitCode::from(2);
         }
     };
-    let yaml_out = yaml::model_to_yaml_with_ids(&model, Some(&elem_ids), Some(&rel_ids));
+    let yaml_out = yaml::model_to_yaml(&model);
     if let Err(e) = fs::write(output_path, &yaml_out) {
         eprintln!("error: cannot write {output_path}: {e}");
         return ExitCode::from(2);
@@ -244,7 +244,7 @@ fn run_diff(old_path: &str, new_path: &str) -> ExitCode {
             return ExitCode::from(2);
         }
     };
-    let (existing, _elem_ids, _rel_ids) = match xml::xml_to_model_preserving_ids(&xml_str) {
+    let existing = match xml::xml_to_model(&xml_str) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("error: cannot parse {old_path}: {e}");
