@@ -130,7 +130,8 @@ assert_contains "$(cat "$TMPDIR/vp_out.archimate")" 'viewpoint="business"' "view
 
 echo "==> Testing --version..."
 OUTPUT=$("$BINARY" --version 2>/dev/null)
-assert_contains "$OUTPUT" "archr 1.1.0" "version is 1.1.0"
+EXPECTED_VERSION="$(grep -m1 '^version' "$PROJECT_ROOT/crates/archr-core/Cargo.toml" | cut -d'"' -f2)"
+assert_contains "$OUTPUT" "archr $EXPECTED_VERSION" "version is $EXPECTED_VERSION"
 
 echo "==> Testing Python skill wrapper..."
 if command -v python3 &>/dev/null; then
