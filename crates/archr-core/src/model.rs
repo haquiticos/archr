@@ -3,6 +3,7 @@
 //! Uses typed newtype indices (`ElementId`, `RelationId`) for O(1) `Vec` access
 //! instead of `Rc<RefCell<>>` or string-keyed `HashMap`s.
 
+use std::collections::HashMap;
 use std::ops::Index;
 use std::str::FromStr;
 
@@ -103,7 +104,7 @@ impl ElementLayer {
 ///
 /// Variant names match the Open Exchange `xsi:type` attribute exactly so that
 /// (de)serialization is straightforward.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum ElementKind {
     // -- Motivation (10) --
     Stakeholder,
@@ -430,7 +431,7 @@ impl FromStr for ElementKind {
 // ---------------------------------------------------------------------------
 
 /// All 11 ArchiMate 3.2 relationship types.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum RelationKind {
     // Structural
     Composition,
@@ -709,6 +710,35 @@ pub struct ElementId(pub usize);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RelationId(pub usize);
 
+/// Stable public identity of an element or relationship: the `original_id` it
+/// carries in its source file (YAML `id` / XML `id`).
+///
+/// Unlike the arena indices ([`ElementId`]/[`RelationId`]), a `RefId` survives
+/// deletions, so callers (GUI selection, serialized commands, stateless
+/// API requests) may hold one across mutations. Resolution is O(1) via the
+/// index [`Model`] maintains internally.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
+pub struct RefId(pub String);
+
+impl RefId {
+    pub fn new(id: impl Into<String>) -> Self {
+        Self(id.into())
+    }
+}
+
+impl From<&str> for RefId {
+    fn from(s: &str) -> Self {
+        Self(s.to_owned())
+    }
+}
+
+impl std::fmt::Display for RefId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Viewpoint (domain)
 // ---------------------------------------------------------------------------
@@ -757,7 +787,7 @@ impl ViewpointKind {
 
 /// A named viewpoint attached to a [`Model`]: a scope of elements and
 /// relationships (by their original ids) rendered as one diagram.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ViewpointDefinition {
     pub id: String,
     pub name: String,
@@ -774,12 +804,17 @@ pub struct ViewpointDefinition {
 /// Root container for an ArchiMate model.
 ///
 /// Owns all elements and relationships. Access via typed indices in O(1).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Model {
     pub name: String,
     elements: Vec<Element>,
     relations: Vec<Relationship>,
     viewpoints: Vec<ViewpointDefinition>,
+    /// Stable-identity lookup (`RefId` → arena slot). Maintained on insert,
+    /// rebuilt on removal. Last wins on duplicate ids; [`crate::validate`]
+    /// flags those for file-sourced models.
+    element_index: HashMap<String, usize>,
+    relation_index: HashMap<String, usize>,
 }
 
 /// A node in the ArchiMate graph.
@@ -788,7 +823,7 @@ pub struct Model {
 /// identifier the element carries in its source file (YAML `id` / XML `id`),
 /// preserved verbatim so conversions round-trip faithfully. Models built
 /// programmatically synthesize `e_N` originals.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {
     pub id: ElementId,
     pub original_id: String,
@@ -799,7 +834,7 @@ pub struct Element {
 /// A directed edge in the ArchiMate graph.
 ///
 /// See [`Element`] for the `id`/`original_id` split.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Relationship {
     pub id: RelationId,
     pub original_id: String,
@@ -816,6 +851,8 @@ impl Model {
             elements: Vec::new(),
             relations: Vec::new(),
             viewpoints: Vec::new(),
+            element_index: HashMap::new(),
+            relation_index: HashMap::new(),
         }
     }
 
@@ -833,9 +870,11 @@ impl Model {
         kind: ElementKind,
     ) -> ElementId {
         let id = ElementId(self.elements.len());
+        let original_id: String = original_id.into();
+        self.element_index.insert(original_id.clone(), id.0);
         self.elements.push(Element {
             id,
-            original_id: original_id.into(),
+            original_id,
             name: name.to_string(),
             kind,
         });
@@ -857,14 +896,91 @@ impl Model {
         kind: RelationKind,
     ) -> RelationId {
         let id = RelationId(self.relations.len());
+        let original_id: String = original_id.into();
+        self.relation_index.insert(original_id.clone(), id.0);
         self.relations.push(Relationship {
             id,
-            original_id: original_id.into(),
+            original_id,
             source,
             target,
             kind,
         });
         id
+    }
+
+    /// Resolves a stable [`RefId`] to the arena index of its element.
+    ///
+    /// Returns `None` when no element carries that id (never carried it, or it
+    /// was deleted — arena slots shift on removal, `RefId`s do not).
+    pub fn resolve_element(&self, r: &RefId) -> Option<ElementId> {
+        self.element_index.get(&r.0).copied().map(ElementId)
+    }
+
+    /// Resolves a stable [`RefId`] to the arena index of its relationship.
+    pub fn resolve_relation(&self, r: &RefId) -> Option<RelationId> {
+        self.relation_index.get(&r.0).copied().map(RelationId)
+    }
+
+    /// Removes an element and cascades to every relationship attached to it.
+    ///
+    /// The remaining elements and relationships are renumbered (arena slots
+    /// shift), the stable-id indexes are rebuilt, and survivor `RefId`s stay
+    /// valid. Returns `false` when no element carries `r`.
+    pub fn remove_element(&mut self, r: &RefId) -> bool {
+        let Some(idx) = self.element_index.get(&r.0).copied() else {
+            return false;
+        };
+        self.relations
+            .retain(|rel| rel.source.0 != idx && rel.target.0 != idx);
+        self.elements.remove(idx);
+        for (i, e) in self.elements.iter_mut().enumerate() {
+            e.id = ElementId(i);
+        }
+        for (i, rel) in self.relations.iter_mut().enumerate() {
+            rel.id = RelationId(i);
+            if rel.source.0 > idx {
+                rel.source.0 -= 1;
+            }
+            if rel.target.0 > idx {
+                rel.target.0 -= 1;
+            }
+        }
+        self.rebuild_indexes();
+        true
+    }
+
+    /// Removes a relationship. Returns `false` when no relationship carries `r`.
+    pub fn remove_relation(&mut self, r: &RefId) -> bool {
+        let Some(idx) = self.relation_index.get(&r.0).copied() else {
+            return false;
+        };
+        self.relations.remove(idx);
+        for (i, rel) in self.relations.iter_mut().enumerate() {
+            rel.id = RelationId(i);
+        }
+        self.rebuild_indexes();
+        true
+    }
+
+    /// Renames an element in place.
+    pub fn rename_element(&mut self, id: ElementId, name: impl Into<String>) {
+        self.elements[id.0].name = name.into();
+    }
+
+    /// Rebuilds the `RefId` lookup indexes after arena slots moved.
+    fn rebuild_indexes(&mut self) {
+        self.element_index = self
+            .elements
+            .iter()
+            .enumerate()
+            .map(|(i, e)| (e.original_id.clone(), i))
+            .collect();
+        self.relation_index = self
+            .relations
+            .iter()
+            .enumerate()
+            .map(|(i, r)| (r.original_id.clone(), i))
+            .collect();
     }
 
     /// Direct O(1) access to an element by typed index.

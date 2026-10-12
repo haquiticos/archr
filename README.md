@@ -22,6 +22,8 @@ A headless Rust engine for ArchiMate 3.2 — validate, manipulate, and export ar
 - **Generate** Open Exchange XML (`.archimate`) from human-friendly YAML
 - **Parse** existing `.archimate` XML back into YAML
 - **Diff** two models to detect added, removed, and modified elements
+- **Command engine** — `apply` serializable mutations (`Command`) with `can_connect` validation and stable `RefId` identity, ready for GUI/MCP adapters
+- **Query engine & projection** — impact, dependencies, paths, orphans; project a model onto a viewpoint or saved view as a valid submodel
 - **Automatic layout** — grid placement by topological layer (no Sugiyama)
 - **Agent Skill** — PEP 723 Python wrapper for Claude Code, Copilot, and Codex
 
@@ -156,6 +158,8 @@ Output (JSON):
 | `generate` | `--input <yaml> --output <xml>` | 0 success, 2 error |
 | `parse` | `--input <xml> --output <yaml>` | 0 success, 2 error |
 | `diff` | `--old <xml> --new <yaml>` | 0 success, 2 error |
+| `query` | `--input <yaml>` + `impact --element <id>`, `deps --element <id>`, `path --from <id> --to <id>`, `orphans` | 0 success, 2 error |
+| `view` | `--input <yaml>` + exactly one of `--viewpoint <name>` / `--view <id>`, optional `--output <yaml>` | 0 success, 2 error |
 | `--version` | — | `archr 1.1.0` |
 
 **Conventions:** Data goes to stdout. Diagnostics go to stderr.
@@ -203,6 +207,9 @@ archr/
 │           ├── model.rs          # Arena-based graph (62 element + 11 relation types)
 │           ├── main.rs           # clap CLI (validate/generate/parse/diff)
 │           ├── validate.rs       # Data-driven derivability matrix
+│           ├── command.rs        # Command/apply + can_connect (mutation seam)
+│           ├── query.rs          # impact / dependencies / path / orphans
+│           ├── viewpoint.rs      # Viewpoint + saved-view projection
 │           ├── diff.rs           # Model diff by element name
 │           ├── layout.rs         # Topological grid layout (petgraph)
 │           └── io/
